@@ -1,0 +1,243 @@
+// main.js
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
+const Store = require('electron-store');
+const { scanContent, vulnerabilityPatterns } = require('./scanner.js');
+
+// electron-store 초기화
+const store = new Store();
+
+const IS_WINDOWS = process.platform === 'win32';
+const isPackaged = app.isPackaged;
+// 앱이 패키징되었을 때는 process.resourcesPath를, 개발 중일 때는 __dirname을 사용합니다.
+const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
+const LOCAL_PYTHON_DIR = path.join(RESOURCES_PATH, '.py-semgrep');
+const LOCAL_SEMGREP_EXE = path.join(LOCAL_PYTHON_DIR, 'Scripts', 'semgrep.exe');
+
+// 지원하는 코드 확장자 목록
+const codeExtensions = new Set([
+    '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.vue', '.svelte', '.py', '.pyw',
+    '.java', '.class', '.jar', '.kt', '.kts', '.scala', '.groovy', '.c', '.cpp', '.h', '.hpp',
+    '.cs', '.dll', '.vb', '.php', '.phtml', '.html', '.htm', '.xhtml', '.css', '.scss', 
+    '.less', '.sass', '.go', '.rs', '.swift', '.m', '.mm', '.rb', '.rbw', '.pl', '.pm', 
+    '.sh', '.bash', '.zsh', '.ps1', '.psm1', '.lua', '.dart', '.json', '.yml', '.yaml', 
+    '.xml', '.toml', '.ini', '.cfg', '.conf', '.env', 'dockerfile', 'jenkinsfile', 
+    '.tf', '.hcl', '.graphql', '.gql', '.sql', '.ddl', '.erl', '.hrl', '.ex', '.exs', 
+    '.elm', '.zig', '.nim', '.cr', '.md', '.markdown'
+]);
+
+// 디렉토리 구조 읽기 함수
+function readDirectoryStructure(dir, rootDir = dir) {
+    const results = [];
+    try {
+        const list = fs.readdirSync(dir);
+        for (const file of list) {
+            const absolutePath = path.join(dir, file);
+            const relativePath = path.relative(rootDir, absolutePath);
+            if (['node_modules', '.git', '.vscode', 'dist', 'build', '.next', '.idea', '.venv', '__pycache__', '.py-semgrep'].includes(file)) continue;
+
+            const stat = fs.statSync(absolutePath);
+            if (stat && stat.isDirectory()) {
+                results.push({ name: file, type: 'directory', path: relativePath, children: readDirectoryStructure(absolutePath, rootDir) });
+            } else {
+                if (codeExtensions.has(path.extname(file).toLowerCase()) || codeExtensions.has(file.toLowerCase())) {
+                    results.push({ name: file, type: 'file', path: relativePath });
+                }
+            }
+        }
+    } catch (error) { console.error(`디렉토리를 읽을 수 없습니다: ${dir}`, error); }
+    return results.sort((a, b) => {
+        if (a.type === b.type) return a.name.localeCompare(b.name);
+        return a.type === 'directory' ? -1 : 1;
+    });
+}
+
+// Semgrep 심각도를 내부 심각도로 매핑
+const mapSeverity = (semgrepSeverity) => {
+    switch (semgrepSeverity) {
+        case 'ERROR': return 'High';
+        case 'WARNING': return 'Medium';
+        case 'INFO': return 'Low';
+        default: return 'Low';
+    }
+};
+
+const createWindow = () => {
+    const mainWindow = new BrowserWindow({
+        width: 1400,
+        height: 900,
+        minWidth: 940,
+        minHeight: 560,
+        frame: false,
+        titleBarStyle: 'hidden',
+        backgroundColor: '#0a0a0a',
+        icon: path.join(__dirname, 'favicon.ico'),
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+        },
+        show: false,
+    });
+  
+    mainWindow.once('ready-to-show', () => mainWindow.show());
+
+    // 창 제어
+    ipcMain.on('minimize-window', () => mainWindow.minimize());
+    ipcMain.on('maximize-window', () => {
+        if (mainWindow.isMaximized()) mainWindow.unmaximize();
+        else mainWindow.maximize();
+    });
+    ipcMain.on('close-window', () => mainWindow.close());
+    mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximized'));
+    mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-unmaximized'));
+
+    // 통합 스캔 핸들러
+    ipcMain.handle('scan:start', async (event, scanType, { projectPath, filesToScan }) => {
+        const currentWindow = BrowserWindow.fromWebContents(event.sender);
+        
+        if (scanType === 'simple') {
+            const results = {};
+            const totalFiles = filesToScan.length;
+            for (let i = 0; i < totalFiles; i++) {
+                const file = filesToScan[i];
+                const filePath = path.join(projectPath, file);
+                try {
+                    const content = fs.readFileSync(filePath, 'utf-8');
+                    const findings = scanContent(content);
+                    if (findings.length > 0) results[file] = findings;
+                } catch (error) { console.error(`파일 읽기 오류: ${filePath}`, error); }
+                const progress = Math.round(((i + 1) / totalFiles) * 100);
+                if(currentWindow) currentWindow.webContents.send('scan:progress', { progress, file });
+            }
+            return results;
+        } 
+        else if (scanType === 'precision') {
+            if (filesToScan.length === 0) return {};
+
+            const command = (IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE)) ? `"${LOCAL_SEMGREP_EXE}"` : 'semgrep';
+            
+            // Create a map for quick lookup of vulnerability details
+            const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
+
+            return new Promise((resolve, reject) => {
+                const fullFilePaths = filesToScan.map(f => path.join(projectPath, f));
+                const args = ['scan', '--json', '--config=auto', ...fullFilePaths];
+
+                if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
+
+                const semgrep = spawn(command, args, { cwd: projectPath, shell: true });
+                
+                semgrep.on('error', (err) => {
+                    if (err.code === 'ENOENT') {
+                        return reject(new Error('SEMGREP_NOT_FOUND'));
+                    }
+                    return reject(err);
+                });
+
+                let jsonData = '';
+                let errorData = '';
+
+                semgrep.stdout.on('data', (data) => { jsonData += data.toString(); });
+                semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
+
+                semgrep.on('close', (code) => {
+                    if (code > 1) {
+                        console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
+                        return reject(new Error(`스캔 실패. 상세: ${errorData}`));
+                    }
+                    if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
+                    try {
+                        if (jsonData.trim() === '') {
+                            return resolve({});
+                        }
+                        const parsedOutput = JSON.parse(jsonData);
+                        const results = {};
+                        const fileContentsCache = new Map();
+                        
+                        parsedOutput.results.forEach(finding => {
+                            const relativePath = path.relative(projectPath, finding.path);
+                            if (!results[relativePath]) results[relativePath] = [];
+                            
+                            let lines = fileContentsCache.get(finding.path);
+                            if (!lines) {
+                                try {
+                                    lines = fs.readFileSync(finding.path, 'utf-8').split('\n');
+                                    fileContentsCache.set(finding.path, lines);
+                                } catch (e) {
+                                    console.error(`파일을 읽을 수 없습니다 ${finding.path}: ${e}`);
+                                    lines = [];
+                                }
+                            }
+                            
+                            const lineContent = lines[finding.start.line - 1] || '';
+                            
+                            // Try to find a matching rule in our predefined patterns
+                            // We check against the full ID and also parts of it for better matching
+                            const ruleInfo = rulesMap.get(finding.check_id) || 
+                                             Array.from(rulesMap.values()).find(p => finding.check_id.includes(p.id));
+
+                            const semgrepMeta = finding.extra.metadata || {};
+
+                            results[relativePath].push({
+                                id: finding.check_id,
+                                line: finding.start.line,
+                                code: lineContent.trim(),
+                                description: finding.extra.message, // Use specific message from Semgrep
+                                severity: mapSeverity(finding.extra.severity),
+                                
+                                // Combine info: Prioritize scanner.js, fallback to Semgrep output, then to defaults.
+                                name: ruleInfo ? ruleInfo.name : (semgrepMeta.name || finding.check_id),
+                                name_en: ruleInfo ? ruleInfo.name_en : (semgrepMeta.name || finding.check_id),
+                                category: ruleInfo ? ruleInfo.category : (semgrepMeta.category || 'Unknown'),
+                                category_en: ruleInfo ? ruleInfo.category_en : (semgrepMeta.category || 'Unknown'),
+                                recommendation_ko: ruleInfo ? ruleInfo.recommendation_ko : (semgrepMeta.recommendation || 'N/A'),
+                                recommendation_en: ruleInfo ? ruleInfo.recommendation_en : (semgrepMeta.recommendation || 'N/A'),
+                            });
+                        });
+                        resolve(results);
+                    } catch (e) {
+                        console.error("Semgrep 스캔 JSON 파싱 실패:", e, `\nJSON Data: ${jsonData}`);
+                        reject(new Error('스캔 결과 파싱에 실패했습니다.'));
+                    }
+                });
+            });
+        }
+    });
+
+    // 디렉토리 선택 핸들러
+    ipcMain.handle('dialog:openDirectory', async () => {
+        const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+        if (canceled || filePaths.length === 0) return null;
+        const dirPath = filePaths[0];
+        try {
+            return { path: dirPath, tree: readDirectoryStructure(dirPath) };
+        } catch (error) { console.error('디렉토리 읽기 오류:', error); return null; }
+    });
+    
+    // 앱 정보 핸들러 (기존 scanner.js의 정적 패턴 사용)
+    ipcMain.handle('get-app-info', () => {
+        return {
+            version: app.getVersion(),
+            locale: app.getLocale(),
+            extensions: Array.from(codeExtensions),
+            vulnerabilities: vulnerabilityPatterns.map(v => ({ 
+                name: v.name, category: v.category, details: v.details,
+                name_en: v.name_en, details_en: v.details_en, category_en: v.category_en,
+                recommendation_ko: v.recommendation_ko, recommendation_en: v.recommendation_en
+            }))
+        };
+    });
+
+    // 설정 핸들러
+    ipcMain.handle('settings:get', (event, key) => store.get(key));
+    ipcMain.on('settings:set', (event, { key, value }) => store.set(key, value));
+
+    mainWindow.loadFile('index.html');
+};
+
+app.whenReady().then(createWindow);
+app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

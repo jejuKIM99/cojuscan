@@ -1,0 +1,130 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline';">
+    <title>cojuscan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --main-bg: #0D0D0D; --secondary-bg: #1A1A1A; --accent-green: #00FF41; --text-color: #E0E0E0; --border-color: #2a2a2a; }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--main-bg); color: var(--text-color); -ms-overflow-style: none; scrollbar-width: none; }
+        body::-webkit-scrollbar { display: none; }
+        #title-bar { -webkit-app-region: drag; }
+        #title-bar-btns { -webkit-app-region: no-drag; }
+        .file-tree ul { padding-left: 1rem; }
+        .file-tree .folder-label { cursor: pointer; }
+        .file-tree .folder-icon::before { content: '📁'; margin-right: 0.5rem; color: var(--accent-green); }
+        .file-tree .file-icon::before { content: '📄'; margin-right: 0.5rem; color: #9ca3af; }
+        .file-tree .toggler::before { content: '▶'; display: inline-block; margin-right: 0.5rem; transition: transform 0.1s ease-in-out; color: var(--accent-green); }
+        .file-tree .toggler.open::before { transform: rotate(90deg); }
+        .form-checkbox:checked { background-color: var(--accent-green); }
+        #results-container, #file-tree-container, #help-modal-content, #vulnerabilities-list { scrollbar-width: thin; scrollbar-color: var(--accent-green) var(--secondary-bg); }
+        #results-container::-webkit-scrollbar, #file-tree-container::-webkit-scrollbar, #help-modal-content::-webkit-scrollbar, #vulnerabilities-list::-webkit-scrollbar { width: 8px; }
+        #results-container::-webkit-scrollbar-track, #file-tree-container::-webkit-scrollbar-track, #help-modal-content::-webkit-scrollbar-track, #vulnerabilities-list::-webkit-scrollbar-track { background: var(--secondary-bg); }
+        #results-container::-webkit-scrollbar-thumb, #file-tree-container::-webkit-scrollbar-thumb, #help-modal-content::-webkit-scrollbar-thumb, #vulnerabilities-list::-webkit-scrollbar-thumb { background-color: var(--accent-green); border-radius: 4px; border: 2px solid var(--secondary-bg); }
+        .ext-shield { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-family: 'Verdana', sans-serif; color: white; height: 20px; line-height: 16px; }
+    </style>
+</head>
+<body class="select-none">
+    <!-- Custom Toolbar -->
+    <div id="title-bar" class="h-8 bg-black flex justify-between items-center fixed top-0 left-0 right-0 z-50">
+        <div class="flex items-center pl-3">
+            <div class="text-sm font-bold">cojuscan</div>
+            <span id="app-version" class="ml-2 text-xs font-mono text-gray-400"></span>
+        </div>
+        <div id="title-bar-btns" class="flex items-center h-full">
+            <!-- Language Switcher -->
+            <div class="relative">
+                <button id="lang-btn" class="px-3 h-full hover:bg-gray-700 transition-colors flex items-center" title="Change Language">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </button>
+                <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-28 bg-gray-900 border border-gray-700 rounded-md shadow-lg">
+                    <a href="#" class="lang-option block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700" data-lang="ko">한국어</a>
+                    <a href="#" class="lang-option block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700" data-lang="en">English</a>
+                </div>
+            </div>
+            <!-- Window Action Buttons -->
+            <button id="minimize-btn" class="px-3 h-full hover:bg-gray-700 transition-colors"><svg width="12" height="12" viewBox="0 0 12 12"><rect fill="#E0E0E0" width="10" height="1" x="1" y="6"></rect></svg></button>
+            <button id="maximize-btn" class="px-3 h-full hover:bg-gray-700 transition-colors">
+                <svg id="maximize-icon" width="12" height="12" viewBox="0 0 12 12"><rect width="9" height="9" x="1.5" y="1.5" fill="none" stroke="#E0E0E0" stroke-width="1"></rect></svg>
+                <svg id="unmaximize-icon" width="12" height="12" viewBox="0 0 12 12" class="hidden"><path fill="none" stroke="#E0E0E0" stroke-width="1" d="M3.5,3.5 L3.5,8.5 L8.5,8.5 M3.5,3.5 L8.5,3.5 M2.5,2.5 L2.5,7.5 L7.5,7.5"></path></svg>
+            </button>
+            <button id="close-btn" class="px-3 h-full hover:bg-red-500 transition-colors"><svg width="12" height="12" viewBox="0 0 12 12"><polygon fill="#E0E0E0" points="11 1.576 10.424 1 6 5.424 1.576 1 1 1.576 5.424 6 1 10.424 1.576 11 6 6.576 10.424 11 11 10.424 6.576 6"></polygon></svg></button>
+        </div>
+    </div>
+
+    <div class="flex h-screen pt-8">
+        <!-- Sidebar -->
+        <aside class="w-1/3 bg-[var(--secondary-bg)] p-4 flex flex-col border-r border-[var(--border-color)]">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-xl font-bold text-[var(--accent-green)]" data-i18n="codeExplorer">Code Explorer</h1>
+                <button id="help-btn" class="text-2xl font-bold text-gray-400 hover:text-white">?</button>
+            </div>
+            <button id="select-dir-btn" class="w-full bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 mb-4 border border-green-600" data-i18n="selectDirectory">디렉토리 선택</button>
+            <div class="mb-2">
+                <input type="text" id="search-input" class="w-full p-2 bg-gray-800 border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-green)]" data-i18n-placeholder="searchFilesPlaceholder">
+            </div>
+            <div class="flex space-x-2 mb-2">
+                <button id="select-all-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-sm py-1 px-2 rounded-md" data-i18n="selectAll">전체 선택</button>
+                <button id="deselect-all-btn" class="flex-1 bg-gray-700 hover:bg-gray-600 text-sm py-1 px-2 rounded-md" data-i18n="deselectAll">전체 해제</button>
+            </div>
+            <div id="file-tree-container" class="flex-grow overflow-y-auto bg-[var(--main-bg)] rounded-lg p-2 file-tree">
+                <p class="text-gray-500 text-center py-10" data-i18n="selectProjectFolder">프로젝트 폴더를 선택하세요.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="w-2/3 p-6 flex flex-col">
+            <header class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-[var(--accent-green)]" data-i18n="vulnerabilityScan">Vulnerability Scan</h2>
+                <div class="flex space-x-2">
+                    <button id="start-scan-simple-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition duration-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed" disabled data-i18n="startSimpleScan">단순 검사</button>
+                    <button id="start-scan-precision-btn" class="bg-green-600 hover:bg-green-500 text-black font-bold py-2 px-4 rounded-lg transition duration-200 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed" disabled data-i18n="startPrecisionScan">정밀 검사</button>
+                </div>
+            </header>
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-2" data-i18n="progress">Progress</h3>
+                <div class="w-full bg-gray-700 rounded-full h-2"><div id="progress-bar" class="bg-[var(--accent-green)] h-2 rounded-full transition-all duration-300" style="width: 0%"></div></div>
+                <p id="progress-text" class="text-right text-gray-400 text-sm mt-1">0%</p>
+            </div>
+            <div id="results-container" class="flex-grow bg-[var(--secondary-bg)] rounded-lg p-4 overflow-y-auto border border-[var(--border-color)]">
+                <p class="text-gray-500 text-center py-10" data-i18n="startScanToSeeResults">검사를 시작하여 취약점 결과를 확인하세요.</p>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Help Modal -->
+    <div id="help-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-[var(--secondary-bg)] rounded-lg shadow-lg p-6 w-3/4 max-w-5xl h-3/4 flex flex-col border-2 border-[var(--accent-green)]">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-[var(--accent-green)]" data-i18n="helpTitle">도움말</h2>
+                <button id="close-modal-btn" class="text-2xl text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div id="help-modal-content" class="flex-grow overflow-y-auto pr-2 text-sm">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold mb-3 border-b-2 border-[var(--accent-green)] pb-2" data-i18n="detectableVulnerabilities">탐지 가능 취약점</h3>
+                    <div class="grid grid-cols-2 gap-6 h-[250px]">
+                        <div id="vulnerabilities-list" class="overflow-y-auto pr-2"></div>
+                        <div id="vuln-details-panel" class="bg-black p-4 rounded-md text-gray-300">
+                            <p class="text-gray-500" data-i18n="clickVulnerabilityToSeeDetails">왼쪽 목록에서 취약점 항목을 클릭하여 설명을 확인하세요.</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 border-b-2 border-[var(--accent-green)] pb-2" data-i18n="supportedExtensions">지원 확장자</h3>
+                    <div id="extensions-list" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./renderer.js"></script>
+</body>
+</html>
