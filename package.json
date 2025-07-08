@@ -39,6 +39,10 @@
       {
         "from": ".py-semgrep",
         "to": ".py-semgrep"
+      },
+      {
+        "from": "build",
+        "to": "build"
       }
     ],
     "win": {

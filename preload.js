@@ -25,4 +25,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // --- Settings ---
   getSetting: (key) => ipcRenderer.invoke('settings:get', key),
   setSetting: (key, value) => ipcRenderer.send('settings:set', { key, value }),
+
+  // --- PDF Export ---
+  exportToPDF: (data) => ipcRenderer.invoke('export:pdf', data),
+  onRenderReportData: (callback) => ipcRenderer.on('render-report-data', (event, ...args) => callback(...args)),
+  reportReadyForPDF: () => ipcRenderer.send('report-ready-for-pdf'),
 });

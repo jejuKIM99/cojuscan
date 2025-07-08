@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cojuscan Security Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="report.css">
+</head>
+<body>
+    <main class="report-container">
+        <section class="page-section" id="vulnerability-list-page">
+            <header>
+                <div class="header-left">
+                    <img id="logo" alt="Logo" style="width: 40px; height: 40px;">
+                    <h1 id="brand-name">cojuscan</h1>
+                </div>
+                <div class="header-right">
+                    <h2 data-i18n="reportTitle">INVOICE</h2>
+                </div>
+            </header>
+
+            <div class="info-section">
+                <div class="info-box">
+                    <h3 data-i18n="scanInfo">SCAN INFO</h3>
+                    <p><strong data-i18n="reportDate">Date:</strong> <span id="report-date"></span></p>
+                    <p><strong data-i18n="scanEngine">Engine:</strong> Semgrep</p>
+                    <p><strong data-i18n="appVersion">Version:</strong> v<span id="app-version"></span></p>
+                </div>
+                <div class="info-box">
+                    <h3 data-i18n="projectInfo">PROJECT INFO</h3>
+                    <p><strong data-i18n="projectPath">Path:</strong> <span id="project-path"></span></p>
+                </div>
+            </div>
+
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-i18n="no">NO</th>
+                            <th data-i18n="vulnerability">VULNERABILITY</th>
+                            <th data-i18n="severity">SEVERITY</th>
+                            <th data-i18n="file">FILE</th>
+                            <th data-i18n="line">LINE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vulnerabilities-list">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="summary-section">
+                <div class="summary-details">
+                    <p><strong data-i18n="totalVulnerabilities">Total Vulnerabilities:</strong> <span id="total-vulnerabilities"></span></p>
+                    <p class="grand-total"><strong data-i18n="securityScore">Security Score:</strong> <span id="security-score"></span> / 100</p>
+                </div>
+            </div>
+            
+            <footer class="page-1-footer">
+                 <div class="footer-shape">
+                    <svg width="100%" height="80" viewBox="0 0 800 80" preserveAspectRatio="none">
+                        <path d="M0 80 H800 V20 L700 40 L600 20 L500 40 L400 20 L300 40 L200 20 L100 40 L0 20 Z" fill="#003B36"/>
+                        <path d="M0 80 H800 V30 L700 50 L600 30 L500 50 L400 30 L300 50 L200 30 L100 50 L0 30 Z" fill="#055043"/>
+                    </svg>
+                 </div>
+            </footer>
+        </section>
+
+        <section class="page-section" id="comprehensive-summary-page">
+            <div class="page-2-header">
+                 <div class="header-shape-2">
+                    <svg width="100%" height="100" viewBox="0 0 800 100" preserveAspectRatio="none">
+                        <path d="M0 0 H250 L200 100 H0 Z" fill="#055043" />
+                        <path d="M220 0 H270 L220 100 H170 Z" fill="#00FF41" opacity="0.7" />
+                    </svg>
+                </div>
+                <div class="header-content-2">
+                    <img id="logo2" alt="Logo" style="width: 50px; height: 50px;">
+                    <h3>cojuscan</h3>
+                </div>
+            </div>
+
+            <div class="page-2-main">
+                <p class="main-date" id="report-date-2"></p>
+                <h2 class="main-title" data-i18n="comprehensiveReportTitle">종합 진단 결과</h2>
+                <div class="content-box" id="summary-text">
+                    </div>
+            </div>
+
+            <div class="page-2-footer">
+                 <div class="footer-shape-2">
+                     <svg width="100%" height="100" viewBox="0 0 800 100" preserveAspectRatio="none">
+                        <path d="M800 100 H550 L600 0 H800 Z" fill="#055043" />
+                        <path d="M580 100 H530 L580 0 H630 Z" fill="#00FF41" opacity="0.7" />
+                    </svg>
+                </div>
+                <div class="signature-area">
+                    <p class="signature-name">Cojus Team</p>
+                    <p class="signature-title">Generated via Cojuscan</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="./report.js"></script>
+</body>
+</html>

@@ -31,7 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scanError: "스캔 중 오류 발생",
             semgrepNotFoundTitle: "Semgrep 설치 필요",
             semgrepNotFound: "정밀 검사를 사용하려면 Semgrep 엔진이 필요합니다. 시스템에 설치되어 있지 않은 것 같습니다.",
-            semgrepInstallInstruction: "터미널에서 'python -m pip install semgrep' 명령어를 실행하여 설치하세요. 설치 후 프로그램을 다시 시작해야 할 수 있습니다."
+            semgrepInstallInstruction: "터미널에서 'python -m pip install semgrep' 명령어를 실행하여 설치하세요. 설치 후 프로그램을 다시 시작해야 할 수 있습니다.",
+            exportReport: "보고서 출력"
         },
         en: {
             codeExplorer: "Code Explorer",
@@ -62,11 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
             scanError: "An error occurred during the scan",
             semgrepNotFoundTitle: "Semgrep Installation Required",
             semgrepNotFound: "The Precision Scan feature requires the Semgrep engine, which does not appear to be installed on your system.",
-            semgrepInstallInstruction: "Please install it by running 'python -m pip install semgrep' in your terminal. You may need to restart the application after installation."
+            semgrepInstallInstruction: "Please install it by running 'python -m pip install semgrep' in your terminal. You may need to restart the application after installation.",
+            exportReport: "Export Report"
         }
     };
     let currentLang = 'ko';
     let appInfo = null;
+    let iconDataMap = {};
 
     const setLanguage = (lang) => {
         if (!['ko', 'en'].includes(lang)) lang = 'ko';
@@ -85,6 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (!helpModal.classList.contains('hidden')) {
             populateHelpModal();
+        }
+        // [수정] 언어 변경 시, 현재 표시된 결과가 있다면 새로운 언어로 다시 그림
+        if (currentScanResults) {
+            displayResults(currentScanResults);
         }
     };
 
@@ -110,8 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('search-input');
     const selectAllBtn = document.getElementById('select-all-btn');
     const deselectAllBtn = document.getElementById('deselect-all-btn');
+    const exportPdfBtn = document.getElementById('export-pdf-btn');
     
     let projectPath = '';
+    let currentScanResults = null;
+    let currentSecurityScore = 0;
     const ignoredFindings = new Set();
     let progressUnsubscribe = null;
 
@@ -120,6 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             appInfo = await window.electronAPI.getAppInfo();
             const savedLang = await window.electronAPI.getSetting('language');
+            
+            if (appInfo && appInfo.icons) {
+                iconDataMap = appInfo.icons;
+            }
 
             if (appInfo && appInfo.version) {
                 appVersionSpan.textContent = `v${appInfo.version}`;
@@ -248,6 +262,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const fileIconMap = {
+        '.html': 'html.svg',
+        '.css': 'css.svg',
+        '.js': 'javascript.svg',
+        '.scss': 'scss.svg',
+        '.vue': 'vue.svg',
+        '.php': 'php.svg',
+        '.json': 'json.svg',
+        '.py': 'python.svg',
+        '.ts': 'typescript.svg',
+        '.jsx': 'react.svg',
+        '.tsx': 'react.svg',
+        '.java': 'java.svg',
+        '.env': 'env.svg',
+        '.md': 'markdown.svg',
+    };
+
     function createTreeElement(nodes) {
         const ul = document.createElement('ul');
         if (!nodes || nodes.length === 0) return ul;
@@ -278,9 +309,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.className = 'mr-2 form-checkbox h-4 w-4 bg-gray-900 border-gray-600 rounded focus:ring-green-500 focus:ring-offset-0';
-                const icon = document.createElement('span'); icon.className = 'file-icon';
+                
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'file-icon';
+                
+                const ext = ('.' + node.name.split('.').pop()).toLowerCase();
+                const iconFilename = fileIconMap[ext];
+
+                if (iconFilename && iconDataMap[iconFilename]) {
+                    const img = document.createElement('img');
+                    img.src = iconDataMap[iconFilename];
+                    img.className = 'w-4 h-4';
+                    iconSpan.appendChild(img);
+                } else {
+                    iconSpan.innerHTML = '📄';
+                }
+                
                 const textSpan = document.createElement('span'); textSpan.textContent = node.name;
-                label.append(checkbox, icon, textSpan);
+                label.append(checkbox, iconSpan, textSpan);
                 li.appendChild(label);
             }
             ul.appendChild(li);
@@ -319,6 +365,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checkedFiles.length === 0) return;
 
         ignoredFindings.clear();
+        exportPdfBtn.classList.add('hidden');
+        currentScanResults = null;
         startSimpleScanBtn.disabled = true;
         startPrecisionScanBtn.disabled = true;
         selectDirBtn.disabled = true;
@@ -331,12 +379,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (progressUnsubscribe) progressUnsubscribe();
         progressUnsubscribe = window.electronAPI.onScanProgress(({ progress, file }) => {
             progressBar.style.width = `${progress}%`;
-            progressText.textContent = `${progress}% - ${file}`;
+            progressText.textContent = `${Math.round(progress)}% - ${file}`;
         });
 
         try {
             const results = await window.electronAPI.startScan(scanType, { projectPath, filesToScan: checkedFiles });
+            currentScanResults = results;
             displayResults(results);
+            if(scanType === 'precision') {
+                exportPdfBtn.classList.remove('hidden');
+            }
         } catch (error) {
             console.error('Scan error:', error);
             if (error.message === 'SEMGREP_NOT_FOUND') {
@@ -391,18 +443,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const severityStyles = { High: { border: 'border-red-500', bg: 'bg-red-500' }, Medium: { border: 'border-yellow-500', bg: 'bg-yellow-500' }, Low: { border: 'border-blue-500', bg: 'bg-blue-500' } };
                 const style = severityStyles[finding.severity] || { border: 'border-gray-500', bg: 'bg-gray-500' };
                 
-                // Correctly select translated fields based on current language
+                // ================== [수정된 부분 시작] ==================
+                // 현재 언어 설정에 따라 올바른 텍스트를 동적으로 선택합니다.
                 const name = currentLang === 'en' ? (finding.name_en || finding.name) : finding.name;
-                const category = currentLang === 'en' ? (finding.category_en || finding.category) : finding.category;
+                const category = currentLang === 'en' ? (finding.category_en || 'General') : (finding.category || '일반');
                 const recommendation = currentLang === 'en' ? (finding.recommendation_en || 'N/A') : (finding.recommendation_ko || 'N/A');
-                const description = finding.description; // Use the specific description from the scan
+                const description = currentLang === 'en' ? (finding.description_en || finding.details_en || finding.description) : finding.description;
+                // ================== [수정된 부분 끝] ====================
                 
                 findingCard.className = `border-l-4 ${style.border} p-3 mb-3 rounded-r-lg bg-[#0D0D0D] transition-opacity`;
                 findingCard.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                         <h4 class="text-lg font-semibold text-gray-100">${name}</h4>
                         <div class="flex items-center flex-shrink-0">
-                            <span class="text-xs font-medium px-2 py-1 rounded-md mr-2 bg-gray-600 text-gray-200">${category || 'General'}</span>
+                            <span class="text-xs font-medium px-2 py-1 rounded-md mr-2 bg-gray-600 text-gray-200">${category}</span>
                             <span class="text-sm font-medium px-2 py-1 rounded-md mr-2 ${style.bg} text-white">${finding.severity}</span>
                             <button class="ignore-btn text-xs bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded">${translations[currentLang].ignore}</button>
                         </div>
@@ -443,13 +497,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 totalScore -= severityScores[findingCard.dataset.severity] || 0;
             }
         });
-        totalScore = Math.max(0, totalScore);
-        const scoreColor = totalScore > 80 ? 'text-green-400' : totalScore > 50 ? 'text-yellow-400' : 'text-red-400';
+        currentSecurityScore = Math.max(0, totalScore);
+        const scoreColor = currentSecurityScore > 80 ? 'text-green-400' : currentSecurityScore > 50 ? 'text-yellow-400' : 'text-red-400';
         const scoreElement = document.getElementById('score-element');
         if(scoreElement) {
-            scoreElement.innerHTML = `<h3 class="text-2xl font-bold">${translations[currentLang].securityScore}: <span class="${scoreColor}">${totalScore} / 100</span></h3>`;
+            scoreElement.innerHTML = `<h3 class="text-2xl font-bold">${translations[currentLang].securityScore}: <span class="${scoreColor}">${currentSecurityScore} / 100</span></h3>`;
         }
     }
+
+    exportPdfBtn.addEventListener('click', () => {
+        if (!currentScanResults || !appInfo) {
+            console.error("보고서를 생성할 검사 결과나 앱 정보가 없습니다.");
+            return;
+        }
+        window.electronAPI.exportToPDF({
+            results: currentScanResults,
+            score: currentSecurityScore,
+            projectPath: projectPath,
+            lang: currentLang,
+            version: appInfo.version,
+            ignored: Array.from(ignoredFindings)
+        });
+    });
 
     function escapeHtml(unsafe) {
         if (typeof unsafe !== 'string') return '';

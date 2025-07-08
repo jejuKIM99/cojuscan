@@ -11,7 +11,6 @@ const store = new Store();
 
 const IS_WINDOWS = process.platform === 'win32';
 const isPackaged = app.isPackaged;
-// 앱이 패키징되었을 때는 process.resourcesPath를, 개발 중일 때는 __dirname을 사용합니다.
 const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
 const LOCAL_PYTHON_DIR = path.join(RESOURCES_PATH, '.py-semgrep');
 const LOCAL_SEMGREP_EXE = path.join(LOCAL_PYTHON_DIR, 'Scripts', 'semgrep.exe');
@@ -28,7 +27,6 @@ const codeExtensions = new Set([
     '.elm', '.zig', '.nim', '.cr', '.md', '.markdown'
 ]);
 
-// 디렉토리 구조 읽기 함수
 function readDirectoryStructure(dir, rootDir = dir) {
     const results = [];
     try {
@@ -54,7 +52,6 @@ function readDirectoryStructure(dir, rootDir = dir) {
     });
 }
 
-// Semgrep 심각도를 내부 심각도로 매핑
 const mapSeverity = (semgrepSeverity) => {
     switch (semgrepSeverity) {
         case 'ERROR': return 'High';
@@ -63,6 +60,25 @@ const mapSeverity = (semgrepSeverity) => {
         default: return 'Low';
     }
 };
+
+function loadIconsAsDataUris() {
+    const iconDir = path.join(RESOURCES_PATH, 'build', 'icon');
+    const icons = {};
+    try {
+        const files = fs.readdirSync(iconDir);
+        for (const file of files) {
+            if (file.endsWith('.svg')) {
+                const filePath = path.join(iconDir, file);
+                const fileData = fs.readFileSync(filePath, 'utf8');
+                const svgDataUri = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(fileData)}`;
+                icons[file] = svgDataUri;
+            }
+        }
+    } catch (error) {
+        console.error('아이콘을 로드할 수 없습니다:', error);
+    }
+    return icons;
+}
 
 const createWindow = () => {
     const mainWindow = new BrowserWindow({
@@ -73,7 +89,7 @@ const createWindow = () => {
         frame: false,
         titleBarStyle: 'hidden',
         backgroundColor: '#0a0a0a',
-        icon: path.join(__dirname, 'favicon.ico'),
+        icon: path.join(__dirname, 'build', 'icon.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -84,7 +100,6 @@ const createWindow = () => {
   
     mainWindow.once('ready-to-show', () => mainWindow.show());
 
-    // 창 제어
     ipcMain.on('minimize-window', () => mainWindow.minimize());
     ipcMain.on('maximize-window', () => {
         if (mainWindow.isMaximized()) mainWindow.unmaximize();
@@ -94,7 +109,6 @@ const createWindow = () => {
     mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximized'));
     mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-unmaximized'));
 
-    // 통합 스캔 핸들러
     ipcMain.handle('scan:start', async (event, scanType, { projectPath, filesToScan }) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         
@@ -117,9 +131,8 @@ const createWindow = () => {
         else if (scanType === 'precision') {
             if (filesToScan.length === 0) return {};
 
-            const command = (IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE)) ? LOCAL_SEMGREP_EXE : 'semgrep';
+            const command = IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE) ? LOCAL_SEMGREP_EXE : 'semgrep';
             
-            // Create a map for quick lookup of vulnerability details
             const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
 
             return new Promise((resolve, reject) => {
@@ -146,15 +159,11 @@ const createWindow = () => {
                 semgrep.on('close', (code) => {
                     if (code > 1) { 
                         console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
-
-                        // 사용자에게 보여줄 에러 메시지를 정제
                         const filteredError = errorData.split('\n').filter(line => 
                             !line.includes('UserWarning: pkg_resources is deprecated') && 
                             !line.includes('(ca-certs): Ignored 1 trust anchors')
                         ).join('\n').trim();
-
                         const finalErrorMessage = filteredError || `스캔 엔진(Semgrep)이 오류 코드 ${code}로 종료되었습니다.`;
-
                         return reject(new Error(`스캔 실패. 상세: ${finalErrorMessage}`));
                     }
                     if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
@@ -183,15 +192,10 @@ const createWindow = () => {
                             
                             const lineContent = lines[finding.start.line - 1] || '';
                             
-                            // Try to find a matching rule in our predefined patterns
-                            // We check against the full ID and also parts of it for better matching
-                            // 1. semgrepId와 정확히 일치하는 규칙을 우선적으로 검색
                             let ruleInfo = Array.from(rulesMap.values()).find(p => p.semgrepId === finding.check_id);
-
-                            // 2. 정확한 매칭이 없으면, 기존의 폴백(fallback) 로직으로 매칭 시도
                             if (!ruleInfo) {
                                 ruleInfo = rulesMap.get(finding.check_id) || 
-                                        Array.from(rulesMap.values()).find(p => p.id && finding.check_id.includes(p.id));
+                                           Array.from(rulesMap.values()).find(p => p.id && finding.check_id.includes(p.id));
                             }
 
                             const semgrepMeta = finding.extra.metadata || {};
@@ -200,10 +204,10 @@ const createWindow = () => {
                                 id: finding.check_id,
                                 line: finding.start.line,
                                 code: lineContent.trim(),
-                                description: finding.extra.message, // Use specific message from Semgrep
+                                // [수정] description과 description_en을 모두 전달
+                                description: ruleInfo ? ruleInfo.description : finding.extra.message,
+                                description_en: ruleInfo ? (ruleInfo.details_en || ruleInfo.description) : finding.extra.message,
                                 severity: mapSeverity(finding.extra.severity),
-                                
-                                // Combine info: Prioritize scanner.js, fallback to Semgrep output, then to defaults.
                                 name: ruleInfo ? ruleInfo.name : (semgrepMeta.name || finding.check_id),
                                 name_en: ruleInfo ? ruleInfo.name_en : (semgrepMeta.name || finding.check_id),
                                 category: ruleInfo ? ruleInfo.category : (semgrepMeta.category || 'Unknown'),
@@ -222,7 +226,6 @@ const createWindow = () => {
         }
     });
 
-    // 디렉토리 선택 핸들러
     ipcMain.handle('dialog:openDirectory', async () => {
         const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });
         if (canceled || filePaths.length === 0) return null;
@@ -232,7 +235,6 @@ const createWindow = () => {
         } catch (error) { console.error('디렉토리 읽기 오류:', error); return null; }
     });
     
-    // 앱 정보 핸들러 (기존 scanner.js의 정적 패턴 사용)
     ipcMain.handle('get-app-info', () => {
         return {
             version: app.getVersion(),
@@ -242,13 +244,62 @@ const createWindow = () => {
                 name: v.name, category: v.category, details: v.details,
                 name_en: v.name_en, details_en: v.details_en, category_en: v.category_en,
                 recommendation_ko: v.recommendation_ko, recommendation_en: v.recommendation_en
-            }))
+            })),
+            icons: loadIconsAsDataUris()
         };
     });
 
-    // 설정 핸들러
     ipcMain.handle('settings:get', (event, key) => store.get(key));
     ipcMain.on('settings:set', (event, { key, value }) => store.set(key, value));
+    
+    ipcMain.handle('export:pdf', async (event, data) => {
+        const reportWindow = new BrowserWindow({
+            width: 800,
+            height: 1120,
+            show: false, 
+            webPreferences: {
+                preload: path.join(__dirname, 'preload.js'),
+                contextIsolation: true,
+                nodeIntegration: false,
+            }
+        });
+
+        ipcMain.once('report-ready-for-pdf', async () => {
+            try {
+                const { canceled, filePath } = await dialog.showSaveDialog({
+                    title: 'Save Report as PDF',
+                    defaultPath: `cojuscan-report-${Date.now()}.pdf`,
+                    filters: [{ name: 'PDF Documents', extensions: ['pdf'] }]
+                });
+
+                if (!canceled && filePath) {
+                    const pdfData = await reportWindow.webContents.printToPDF({
+                        marginsType: 0,
+                        printBackground: true,
+                    });
+                    fs.writeFileSync(filePath, pdfData);
+                }
+            } catch (error) {
+                console.error('PDF 저장 실패:', error);
+            } finally {
+                reportWindow.close();
+            }
+        });
+
+        await reportWindow.loadFile('report.html');
+        
+        let logoDataUri = '';
+        try {
+            const logoPath = path.join(RESOURCES_PATH, 'build', 'icon.ico');
+            const logoData = fs.readFileSync(logoPath).toString('base64');
+            logoDataUri = `data:image/x-icon;base64,${logoData}`;
+        } catch (e) {
+            console.error("로고 파일을 읽을 수 없습니다.", e);
+        }
+        
+        const finalData = {...data, logoData: logoDataUri};
+        reportWindow.webContents.send('render-report-data', finalData);
+    });
 
     mainWindow.loadFile('index.html');
 };

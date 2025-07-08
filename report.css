@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Inter:wght@400;700&display=swap');
+
+body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+}
+
+/* A4 용지 크기에 맞는 컨테이너 */
+.report-container {
+    width: 210mm;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* 각 보고서 섹션(페이지)의 기본 스타일 */
+.page-section {
+    width: 100%;
+    min-height: 297mm; /* 최소 높이를 A4로 설정하되, 내용이 넘치면 늘어남 */
+    box-sizing: border-box;
+    padding: 20mm;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+@media print {
+    body { margin: 0; }
+    .report-container { width: auto; margin: 0; }
+    .page-section { min-height: 0; } /* 인쇄 시에는 최소 높이 제한 없음 */
+    
+    #comprehensive-summary-page {
+        page-break-before: always;
+    }
+}
+
+/* Page 1 Styles */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #055043;
+    padding-bottom: 10px;
+    flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; }
+#brand-name { font-size: 24px; font-weight: 700; color: #055043; margin-left: 10px; }
+.header-right h2 { font-size: 30px; font-weight: 700; color: #055043; margin: 0; }
+
+.info-section { display: flex; justify-content: space-between; margin-top: 30px; flex-shrink: 0; }
+.info-box { width: 48%; }
+.info-box h3 { font-size: 14px; font-weight: 700; color: #055043; border-bottom: 1px solid #055043; padding-bottom: 5px; margin-bottom: 10px; }
+.info-box p { font-size: 12px; margin: 4px 0; }
+
+.table-section {
+    margin-top: 30px;
+    flex-grow: 1; 
+    overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+thead { background-color: #055043; color: white; display: table-header-group; }
+th, td { padding: 8px; text-align: left; font-size: 11px; border: 1px solid #ddd; word-break: break-all; }
+tr { page-break-inside: avoid; }
+th { font-weight: 700; }
+tbody tr:nth-child(even) { background-color: #f2f2f2; }
+td.severity-High { color: #D32F2F; font-weight: bold; }
+td.severity-Medium { color: #F57C00; font-weight: bold; }
+td.severity-Low { color: #303F9F; font-weight: bold; }
+
+/* 무시된 항목 스타일 수정 */
+.ignored-row {
+    color: #999;
+    background-color: #fafafa !important;
+    /* text-decoration은 여기서 제거 */
+}
+.ignored-row td {
+    color: #999 !important;
+    text-decoration: line-through; /* td에 직접 적용 */
+}
+
+.summary-section { margin-top: 20px; display: flex; justify-content: flex-end; flex-shrink: 0; }
+.summary-details { width: 40%; font-size: 14px; }
+.summary-details p { display: flex; justify-content: space-between; padding: 5px 0; }
+.grand-total { font-size: 18px; font-weight: 700; color: #055043; border-top: 2px solid #055043; margin-top: 10px; }
+.page-1-footer { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; z-index: -1; }
+
+/* Page 2 Styles */
+#comprehensive-summary-page {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+.page-2-header { position: absolute; top: 0; left: 0; width: 100%; height: 100px; flex-shrink: 0; }
+.header-content-2 { position: absolute; top: 25px; left: 20mm; display: flex; align-items: center; color: white; z-index: 10; }
+.header-content-2 h3 {
+    font-size: 20px;
+    margin-left: 10px;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+
+.page-2-main {
+    padding: 20mm;
+    padding-top: 120px;
+    flex-grow: 1; 
+}
+.main-date { font-size: 12px; color: #666; margin-bottom: 20px; }
+.main-title { font-size: 24px; font-weight: 700; color: #055043; margin-bottom: 20px; }
+.content-box { font-size: 14px; line-height: 1.8; }
+.content-box p { margin-bottom: 1em; }
+.content-box ul { list-style-type: disc; padding-left: 20px; margin: 1em 0; }
+.content-box h4 { font-size: 16px; font-weight: 700; color: #055043; margin-top: 2em; margin-bottom: 1em; border-left: 4px solid #00FF41; padding-left: 10px; }
+.content-box blockquote { margin: 1em 0; padding: 10px 15px; background-color: #f2f2f2; border-left: 5px solid #ccc; font-style: italic; }
+
+.page-2-footer {
+    position: relative;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.signature-area {
+    color: white; 
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5); 
+    z-index: 10;
+    text-align: right;
+    position: absolute;
+    right: 10mm;
+    bottom: 30px;
+}
+.signature-name { font-size: 18px; font-weight: 700; }
+.signature-title { font-size: 14px; opacity: 0.9; }
+
+.header-shape-2, .footer-shape-2 { position: absolute; left: 0; width: 100%; height: 100px; z-index: 1; }
+.header-shape-2 { top: 0; }
+.footer-shape-2 { bottom: 0; }
