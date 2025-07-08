@@ -117,7 +117,7 @@ const createWindow = () => {
         else if (scanType === 'precision') {
             if (filesToScan.length === 0) return {};
 
-            const command = (IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE)) ? `"${LOCAL_SEMGREP_EXE}"` : 'semgrep';
+            const command = (IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE)) ? LOCAL_SEMGREP_EXE : 'semgrep';
             
             // Create a map for quick lookup of vulnerability details
             const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
@@ -128,7 +128,7 @@ const createWindow = () => {
 
                 if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
 
-                const semgrep = spawn(command, args, { cwd: projectPath, shell: true });
+                const semgrep = spawn(command, args, { cwd: projectPath });
                 
                 semgrep.on('error', (err) => {
                     if (err.code === 'ENOENT') {
@@ -144,9 +144,18 @@ const createWindow = () => {
                 semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
 
                 semgrep.on('close', (code) => {
-                    if (code > 1) {
+                    if (code > 1) { 
                         console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
-                        return reject(new Error(`스캔 실패. 상세: ${errorData}`));
+
+                        // 사용자에게 보여줄 에러 메시지를 정제
+                        const filteredError = errorData.split('\n').filter(line => 
+                            !line.includes('UserWarning: pkg_resources is deprecated') && 
+                            !line.includes('(ca-certs): Ignored 1 trust anchors')
+                        ).join('\n').trim();
+
+                        const finalErrorMessage = filteredError || `스캔 엔진(Semgrep)이 오류 코드 ${code}로 종료되었습니다.`;
+
+                        return reject(new Error(`스캔 실패. 상세: ${finalErrorMessage}`));
                     }
                     if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
                     try {
@@ -176,8 +185,14 @@ const createWindow = () => {
                             
                             // Try to find a matching rule in our predefined patterns
                             // We check against the full ID and also parts of it for better matching
-                            const ruleInfo = rulesMap.get(finding.check_id) || 
-                                             Array.from(rulesMap.values()).find(p => finding.check_id.includes(p.id));
+                            // 1. semgrepId와 정확히 일치하는 규칙을 우선적으로 검색
+                            let ruleInfo = Array.from(rulesMap.values()).find(p => p.semgrepId === finding.check_id);
+
+                            // 2. 정확한 매칭이 없으면, 기존의 폴백(fallback) 로직으로 매칭 시도
+                            if (!ruleInfo) {
+                                ruleInfo = rulesMap.get(finding.check_id) || 
+                                        Array.from(rulesMap.values()).find(p => p.id && finding.check_id.includes(p.id));
+                            }
 
                             const semgrepMeta = finding.extra.metadata || {};
 

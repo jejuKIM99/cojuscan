@@ -162,7 +162,7 @@ async function main() {
         }
 
         logAttempt('로컬 pip를 이용해 Semgrep 설치 중... (시간이 많이 걸릴 수 있습니다)');
-        const semgrepInstallResult = await runCommand(`"${PIP_EXE}" install semgrep`);
+        const semgrepInstallResult = await runCommand(`"${PIP_EXE}" install --upgrade semgrep`);
         if (!semgrepInstallResult.success) {
             throw new Error(`Semgrep 설치 실패:\n${semgrepInstallResult.stderr}`);
         }

@@ -41,30 +41,6 @@ const vulnerabilityPatterns = [
         recommendation_en: 'If this token contains sensitive information, manage it securely through environment variables or a secret store. You can ignore this if it is dummy data for testing.'
     },
     {
-        id: 'command_injection',
-        name: '커맨드 인젝션', name_en: 'Command Injection',
-        pattern: /(exec|spawn|execSync)\s*\([\s\S]*['"`]\s*\+\s*\w+/i,
-        description: '사용자 입력을 포함하여 쉘 명령을 실행하면 임의의 명령이 실행될 수 있는 Command Injection 공격에 취약할 수 있습니다.',
-        details: '사용자 입력을 검증 없이 쉘 명령어에 포함시키면, 공격자가 `&&`, `;` 등의 문자를 이용해 의도하지 않은 추가 명령을 실행할 수 있습니다.',
-        details_en: 'If user input is included in a shell command without validation, an attacker can use characters like `&&` or `;` to execute additional, unintended commands.',
-        severity: 'High',
-        category: '백엔드', category_en: 'Backend',
-        recommendation_ko: '외부 프로세스를 실행할 때 사용자 입력을 인자로 안전하게 전달하고, 고정된 명령어만 사용하도록 제한하세요.',
-        recommendation_en: 'When executing external processes, pass user input safely as arguments and restrict usage to fixed commands.'
-    },
-    {
-        id: 'path_traversal',
-        name: '경로 탐색 (Path Traversal)', name_en: 'Path Traversal',
-        pattern: /(fs\.(readFile|readFileSync|createReadStream)|require|path\.join)\s*\([^)]*userInput[^)]*\)/i,
-        description: '사용자 입력(userInput)을 파일 시스템 경로에 직접 사용하면, 상위 디렉토리(../../) 접근을 통해 민감한 파일에 접근할 수 있습니다.',
-        details: '공격자가 `../`와 같은 경로 조작 문자를 입력하여, 웹 루트 디렉토리 외부의 민감한 파일(예: `/etc/passwd`)에 접근할 수 있습니다.',
-        details_en: 'An attacker can input path traversal characters like `../` to access sensitive files outside of the web root directory (e.g., `/etc/passwd`).',
-        severity: 'High',
-        category: '백엔드', category_en: 'Backend',
-        recommendation_ko: '사용자 입력을 경로에 사용하기 전에, 허용된 경로 내에 있는지 반드시 검증하고 정규화하세요.',
-        recommendation_en: 'Before using user input in a path, always validate and normalize it to ensure it is within the allowed directory.'
-    },
-    {
         id: 'prototype_pollution',
         name: '프로토타입 오염', name_en: 'Prototype Pollution',
         pattern: /\[\s*['"]__proto__['"]\s*\]|Object\.prototype\.polluted/i,
@@ -88,7 +64,32 @@ const vulnerabilityPatterns = [
         recommendation_ko: '이 문자열이 민감 정보라면, 환경 변수나 보안 스토어로 즉시 이동시키세요. 만약 해시 값이나 공개 키 등 비민감 정보라면 무시할 수 있습니다.',
         recommendation_en: 'If this string is sensitive, move it to an environment variable or a secret store immediately. You can ignore this if it is non-sensitive information like a hash or public key.'
     },
-
+    {
+        id: 'insecure-document-method', // Semgrep ID: javascript.browser.security.insecure-document-method.insecure-document-method
+        semgrepId: 'javascript.browser.security.insecure-document-method.insecure-document-method',
+        name: '안전하지 않은 DOM 조작', name_en: 'Insecure DOM Manipulation',
+        pattern: /\.innerHTML\s*=|document\.write\s*\(/i,
+        description: 'innerHTML, document.write와 같이 안전하지 않은 메서드에 사용자 제어 데이터를 사용하면 XSS(Cross-Site Scripting) 취약점으로 이어질 수 있습니다.',
+        details: '악의적인 스크립트가 포함된 문자열이 innerHTML, document.write 등을 통해 DOM에 삽입되면, 해당 스크립트가 실행되어 사용자의 세션을 탈취하거나 의도하지 않은 동작을 유발할 수 있습니다.',
+        details_en: 'If a string containing a malicious script is inserted into the DOM via methods like innerHTML or document.write, the script can execute, potentially stealing user sessions or causing unintended actions.',
+        severity: 'High',
+        category: '프론트엔드', category_en: 'Frontend',
+        recommendation_ko: '사용자 입력을 DOM에 삽입할 때는 `innerHTML` 대신 `textContent`를 사용하세요. HTML 삽입이 꼭 필요한 경우, DOMPurify와 같은 라이브러리를 사용하여 입력을 반드시 새니타이즈(Sanitize)해야 합니다.',
+        recommendation_en: 'Use `textContent` instead of `innerHTML` when inserting user input into the DOM. If HTML insertion is necessary, you must sanitize the input using a library like DOMPurify.'
+    },
+    {
+        id: 'command_injection',
+        semgrepId: 'javascript.lang.security.detect-child-process.detect-child-process', // semgrepId 추가
+        name: '커맨드 인젝션', name_en: 'Command Injection',
+        pattern: /(exec|spawn|execSync)\s*\([\s\S]*['"`]\s*\+\s*\w+/i,
+        description: '사용자 입력을 포함하여 쉘 명령을 실행하면 임의의 명령이 실행될 수 있는 Command Injection 공격에 취약할 수 있습니다.',
+        details: '사용자 입력을 검증 없이 쉘 명령어에 포함시키면, 공격자가 `&&`, `;` 등의 문자를 이용해 의도하지 않은 추가 명령을 실행할 수 있습니다.',
+        details_en: 'If user input is included in a shell command without validation, an attacker can use characters like `&&` or `;` to execute additional, unintended commands.',
+        severity: 'High',
+        category: '백엔드', category_en: 'Backend',
+        recommendation_ko: '외부 프로세스를 실행할 때 사용자 입력을 인자로 안전하게 전달하고, 고정된 명령어만 사용하도록 제한하세요. 불가피하게 `exec`를 사용해야 한다면, 사용자 입력을 쉘 메타문자로부터 엄격하게 이스케이프 처리해야 합니다.',
+        recommendation_en: 'When executing external processes, pass user input safely as arguments and restrict usage to fixed commands. If you must use `exec`, strictly escape user input from shell metacharacters.'
+    },
     // =================================================================
     // Medium Severity Vulnerabilities
     // =================================================================
@@ -119,6 +120,7 @@ const vulnerabilityPatterns = [
     {
         id: 'detect-non-literal-regexp',
         name: '동적 정규식 생성', name_en: 'Non-literal RegExp Creation',
+        semgrepId: 'javascript.lang.security.audit.non-literal-regexp.non-literal-regexp',
         pattern: /new\s+RegExp\(/i,
         description: '사용자 입력과 같이 신뢰할 수 없는 값을 이용하여 정규식을 동적으로 생성하면, ReDoS(정규식 서비스 거부) 공격에 취약할 수 있습니다.',
         details: '공격자가 특정 패턴을 입력하여 정규식 엔진의 처리 시간을 기하급수적으로 증가시켜 서버 리소스를 고갈시킬 수 있습니다.',
@@ -164,7 +166,58 @@ const vulnerabilityPatterns = [
         recommendation_ko: '리다이렉션 시 허용된 URL 목록(Whitelist)을 만들어, 사용자 입력이 해당 목록에 포함된 경우에만 리다이렉션을 허용하세요.',
         recommendation_en: 'When redirecting, create a whitelist of allowed URLs and only redirect if the user input is on that list.'
     },
-
+    {
+        id: 'missing-integrity', // Semgrep ID: html.security.audit.missing-integrity.missing-integrity
+        semgrepId: 'html.security.audit.missing-integrity.missing-integrity',
+        name: '외부 리소스 무결성 검증 누락', name_en: 'Missing Subresource Integrity',
+        pattern: /<link[^>]+href="https?:\/\/[^>]+>|<script[^>]+src="https?:\/\/[^>]+>/i,
+        description: '외부 스크립트나 스타일시트 로드 시 `integrity` 속성이 누락되었습니다. CDN 등이 공격받을 경우 의도치 않은 코드가 실행될 수 있습니다.',
+        details: '`integrity` 속성은 브라우저가 외부에서 가져온 리소스(JS, CSS)가 중간에 변조되지 않았는지 확인할 수 있게 해줍니다. 이 속성이 없으면 공격자가 CDN을 장악했을 때 악성 코드를 사이트에 주입하여 XSS 등의 공격을 수행할 수 있습니다.',
+        details_en: 'The `integrity` attribute allows the browser to verify that fetched resources (like JS or CSS) have not been manipulated. Without it, an attacker who compromises a CDN could inject malicious code into your site, leading to XSS and other attacks.',
+        severity: 'Medium',
+        category: '프론트엔드', category_en: 'Frontend',
+        recommendation_ko: '외부 리소스(CDN 등)를 로드하는 `<script>` 또는 `<link>` 태그에 SRI(Subresource Integrity) 해시 값을 포함한 `integrity` 속성을 추가하세요. 예: <script src="..." integrity="sha384-..." crossorigin="anonymous"></script>',
+        recommendation_en: 'Add the `integrity` attribute with an SRI (Subresource Integrity) hash value to all `<script>` and `<link>` tags that load resources from external origins (e.g., CDNs). Example: <script src="..." integrity="sha384-..." crossorigin="anonymous"></script>'
+    },
+    {
+        id: 'avoid-v-html', // Semgrep ID: javascript.vue.security.audit.xss.templates.avoid-v-html.avoid-v-html
+        semgrepId: 'javascript.vue.security.audit.xss.templates.avoid-v-html.avoid-v-html',
+        name: 'Vue.js의 v-html 사용', name_en: 'Vue.js: v-html Directive Used',
+        pattern: /v-html="/i,
+        description: '웹사이트에 동적으로 HTML을 렌더링하는 v-html 디렉티브는 XSS(Cross-Site Scripting) 취약점으로 이어질 수 있어 매우 위험합니다.',
+        details: 'v-html은 신뢰할 수 없는 사용자 제공 콘텐츠를 사용할 경우, 악의적인 스크립트가 사이트에서 실행되도록 허용할 수 있습니다. 이는 사용자 세션 탈취, 데이터 도난 등의 심각한 보안 문제로 이어질 수 있습니다.',
+        details_en: 'Dynamically rendering arbitrary HTML on your website can be very dangerous because it can easily lead to XSS vulnerabilities. Using v-html on user-provided content can allow malicious scripts to be executed on your site.',
+        severity: 'Medium',
+        category: '프론트엔드', category_en: 'Frontend',
+        recommendation_ko: 'v-html 사용을 피하고, 대신 이중 중괄호(`{{ }}`)를 사용한 텍스트 보간을 사용하세요. HTML 렌더링이 반드시 필요한 경우, DOMPurify와 같은 라이브러리를 사용하여 서버 또는 클라이언트 측에서 콘텐츠를 사전에 새니타이즈(Sanitize)하세요.',
+        recommendation_en: 'Avoid using v-html and use text interpolation (mustaches `{{ }}`) instead. If you must render HTML, pre-sanitize the content on the server or client-side using a library like DOMPurify.'
+    },
+    {
+        id: 'unknown-value-with-script-tag', // Semgrep ID: javascript.lang.security.audit.unknown-value-with-script-tag.unknown-value-with-script-tag
+        semgrepId: 'javascript.lang.security.audit.unknown-value-with-script-tag.unknown-value-with-script-tag',
+        name: 'script 태그 내 알 수 없는 값', name_en: 'Unknown Value in Script Tag',
+        pattern: /<script>.*\{\{.*\}\}.*<\/script>/i,
+        description: 'script 태그 내에서 출처를 알 수 없는 값을 사용하면 XSS(Cross-Site Scripting) 취약점이 발생할 수 있습니다.',
+        details: 'script 태그의 내용으로 변수를 직접 사용하면, 공격자가 해당 변수에 악성 코드를 삽입하여 사용자의 브라우저에서 임의의 스크립트를 실행할 수 있습니다.',
+        details_en: 'Using an unknown value inside a script tag can lead to XSS vulnerabilities, as an attacker could inject malicious code into the variable, allowing it to be executed by the user\'s browser.',
+        severity: 'Medium',
+        category: '프론트엔드', category_en: 'Frontend',
+        recommendation_ko: 'script 태그 내에서는 신뢰할 수 없는 변수를 직접 사용하지 마세요. 데이터를 전달해야 하는 경우, data 속성을 사용하고 해당 값을 문자열로 엄격하게 검증 및 이스케이프 처리하세요.',
+        recommendation_en: 'Do not use untrusted variables directly inside script tags. If you need to pass data, use data attributes and ensure the values are strictly validated and escaped as strings.'
+    },
+    {
+        id: 'path_traversal',
+        semgrepId: 'javascript.lang.security.audit.path-traversal.path-join-resolve-traversal.path-join-resolve-traversal', // semgrepId 추가
+        name: '경로 탐색 (Path Traversal)', name_en: 'Path Traversal',
+        pattern: /(fs\.(readFile|readFileSync|createReadStream)|require|path\.join)\s*\([^)]*userInput[^)]*\)/i,
+        description: '사용자 입력을 파일 시스템 경로에 직접 사용하면, 상위 디렉토리(../../) 접근을 통해 민감한 파일에 접근할 수 있습니다.',
+        details: '공격자가 `../`와 같은 경로 조작 문자를 입력하여, 웹 루트 디렉토리 외부의 민감한 파일(예: `/etc/passwd`)에 접근할 수 있습니다.',
+        details_en: 'An attacker can input path traversal characters like `../` to access sensitive files outside of the web root directory (e.g., `/etc/passwd`).',
+        severity: 'Medium',
+        category: '백엔드', category_en: 'Backend',
+        recommendation_ko: '사용자 입력을 경로에 사용하기 전에, `path.normalize()` 또는 `path.resolve()`를 사용하여 경로를 정규화하고, 의도된 기본 디렉토리 내에 있는지 반드시 검증하세요.',
+        recommendation_en: 'Before using user input in a path, normalize it using `path.normalize()` or `path.resolve()` and always validate that the final path is within the intended base directory.'
+    },
     // =================================================================
     // Low Severity Vulnerabilities
     // =================================================================
