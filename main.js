@@ -1,12 +1,14 @@
 // main.js
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
+const http = require('http');
 const { spawn } = require('child_process');
+const { URL } = require('url');
 const Store = require('electron-store');
 const { scanContent, vulnerabilityPatterns } = require('./scanner.js');
 
-// electron-store 초기화
 const store = new Store();
 
 const IS_WINDOWS = process.platform === 'win32';
@@ -15,7 +17,6 @@ const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
 const LOCAL_PYTHON_DIR = path.join(RESOURCES_PATH, '.py-semgrep');
 const LOCAL_SEMGREP_EXE = path.join(LOCAL_PYTHON_DIR, 'Scripts', 'semgrep.exe');
 
-// 지원하는 코드 확장자 목록
 const codeExtensions = new Set([
     '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.vue', '.svelte', '.py', '.pyw',
     '.java', '.class', '.jar', '.kt', '.kts', '.scala', '.groovy', '.c', '.cpp', '.h', '.hpp',
@@ -204,7 +205,6 @@ const createWindow = () => {
                                 id: finding.check_id,
                                 line: finding.start.line,
                                 code: lineContent.trim(),
-                                // [수정] description과 description_en을 모두 전달
                                 description: ruleInfo ? ruleInfo.description : finding.extra.message,
                                 description_en: ruleInfo ? (ruleInfo.details_en || ruleInfo.description) : finding.extra.message,
                                 severity: mapSeverity(finding.extra.severity),
@@ -225,6 +225,120 @@ const createWindow = () => {
             });
         }
     });
+    
+    // URL Scan Handler based on cojuscan.js
+    ipcMain.handle('url:scan', async (event, { url, verificationToken }) => {
+        const currentWindow = BrowserWindow.fromWebContents(event.sender);
+        const sendProgress = (progress, text) => {
+            if (currentWindow && !currentWindow.isDestroyed()) {
+                currentWindow.webContents.send('url-scan:progress', { progress, text });
+            }
+        };
+
+        const hiddenWin = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false, contextIsolation: false } });
+
+        try {
+            // 1. Verify ownership
+            sendProgress(10, `소유권 확인을 위해 페이지 로드 중...`);
+            await hiddenWin.loadURL(url);
+            const htmlContent = await hiddenWin.webContents.executeJavaScript('document.documentElement.outerHTML');
+            
+            const verificationTag = `<meta name="cojuscan-verification" content="${verificationToken}">`;
+            if (!htmlContent.includes(verificationTag)) {
+                throw new Error('VERIFICATION_FAILED');
+            }
+
+            // 2. Find and fetch cojuscan.js
+            sendProgress(30, `cojuscan.js 파일 탐색 중...`);
+            const mainUrl = new URL(url);
+            const cojuscanUrl = new URL('/cojuscan/cojuscan.js', mainUrl.origin).href;
+            
+            const cojuscanContent = await new Promise((resolve, reject) => {
+                const request = net.request({ url: cojuscanUrl });
+                let body = '';
+                request.on('response', (response) => {
+                    if (response.statusCode >= 400) return reject(new Error(`COJUSCAN_JS_NOT_FOUND`));
+                    response.on('data', (chunk) => { body += chunk.toString(); });
+                    response.on('end', () => resolve(body));
+                    response.on('error', (error) => reject(error));
+                });
+                request.end();
+            });
+
+            // 3. Parse imports from cojuscan.js (MODIFIED)
+            sendProgress(50, `분석 대상 파일 목록 파싱 중...`);
+            const importRegex = /import\s+.*\s+from\s+['"](.+?)['"]/g;
+            const dynamicImportRegex = /import\s*\(\s*['"](.+?)['"]\s*\)/g;
+            const bareImportRegex = /import\s+['"](.+?)['"];/g; // <<< THIS LINE IS NEW
+            
+            const filePaths = new Set();
+            let match;
+
+            while ((match = importRegex.exec(cojuscanContent)) !== null) filePaths.add(match[1]);
+            while ((match = dynamicImportRegex.exec(cojuscanContent)) !== null) filePaths.add(match[1]);
+            while ((match = bareImportRegex.exec(cojuscanContent)) !== null) filePaths.add(match[1]); // <<< THIS LINE IS NEW
+
+            const fileList = Array.from(filePaths);
+            if (fileList.length === 0) {
+                 sendProgress(100, '분석할 파일이 없습니다.');
+                 return {};
+            }
+
+            // 4. Fetch and scan each file
+            const results = {};
+            const totalFiles = fileList.length;
+
+            for (let i = 0; i < totalFiles; i++) {
+                const filePath = fileList[i];
+                const progress = 60 + Math.round(((i + 1) / totalFiles) * 40);
+                const resultKey = path.basename(filePath);
+                sendProgress(progress, `${resultKey} 분석 중...`);
+
+                try {
+                    const fileUrl = new URL(filePath, mainUrl.href).href;
+                    const fileContent = await new Promise((resolve, reject) => {
+                        const request = net.request({ url: fileUrl });
+                        let body = '';
+                        request.on('response', (response) => {
+                             if (response.statusCode >= 400) return reject(new Error(`HTTP ${response.statusCode}`));
+                             response.on('data', (chunk) => { body += chunk.toString(); });
+                             response.on('end', () => resolve(body));
+                             response.on('error', (error) => reject(error));
+                        });
+                        request.end();
+                    });
+                    
+                    const findings = scanContent(fileContent);
+                    if (findings.length > 0) {
+                        if (!results[filePath]) results[filePath] = [];
+                        results[filePath].push(...findings);
+                    }
+                } catch(e) {
+                    console.error(`'${filePath}' 파일 분석 실패:`, e.message);
+                    if (!results[filePath]) results[filePath] = [];
+                    results[filePath].push({
+                        id: 'fetch-error',
+                        name: '파일 로드 실패', name_en: 'File Load Failed',
+                        description: `'${filePath}' 파일의 내용을 가져올 수 없습니다. 경로를 확인하세요.`,
+                        description_en: `Could not fetch content for '${filePath}'. Check the path.`,
+                        severity: 'Low', line: 1, code: e.message
+                    });
+                }
+            }
+            
+            sendProgress(100, '분석 완료!');
+            return results;
+
+        } catch (error) {
+            console.error('URL 스캔 오류:', error);
+            throw error;
+        } finally {
+            if (hiddenWin && !hiddenWin.isDestroyed()) {
+                hiddenWin.close();
+            }
+        }
+    });
+
 
     ipcMain.handle('dialog:openDirectory', async () => {
         const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });

@@ -23,13 +23,13 @@
         .file-tree .toggler::before { content: '▶'; display: inline-block; margin-right: 0.5rem; transition: transform 0.1s ease-in-out; color: var(--accent-color); }
         .file-tree .toggler.open::before { transform: rotate(90deg); }
         .form-checkbox:checked { background-color: var(--accent-color); }
-        #results-container, #file-tree-container, #help-modal-content, #vulnerabilities-list, #theme-editor-properties { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); }
-        #results-container::-webkit-scrollbar, #file-tree-container::-webkit-scrollbar, #help-modal-content::-webkit-scrollbar, #vulnerabilities-list::-webkit-scrollbar, #theme-editor-properties::-webkit-scrollbar { width: 8px; }
-        #results-container::-webkit-scrollbar-track, #file-tree-container::-webkit-scrollbar-track, #help-modal-content::-webkit-scrollbar-track, #vulnerabilities-list::-webkit-scrollbar-track, #theme-editor-properties::-webkit-scrollbar-track { background: var(--scrollbar-track-color); }
-        #results-container::-webkit-scrollbar-thumb, #file-tree-container::-webkit-scrollbar-thumb, #help-modal-content::-webkit-scrollbar-thumb, #vulnerabilities-list::-webkit-scrollbar-thumb, #theme-editor-properties::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-color); border-radius: 4px; border: 2px solid var(--scrollbar-track-color); }
+        #results-container, #file-tree-container, #help-modal-content, #vulnerabilities-list, #theme-editor-properties, #url-scan-modal-content, #verified-url-list, #url-scan-info-panel { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color); }
+        #results-container::-webkit-scrollbar, #file-tree-container::-webkit-scrollbar, #help-modal-content::-webkit-scrollbar, #vulnerabilities-list::-webkit-scrollbar, #theme-editor-properties::-webkit-scrollbar, #url-scan-modal-content::-webkit-scrollbar, #verified-url-list::-webkit-scrollbar, #url-scan-info-panel::-webkit-scrollbar { width: 8px; }
+        #results-container::-webkit-scrollbar-track, #file-tree-container::-webkit-scrollbar-track, #help-modal-content::-webkit-scrollbar-track, #vulnerabilities-list::-webkit-scrollbar-track, #theme-editor-properties::-webkit-scrollbar-track, #url-scan-modal-content::-webkit-scrollbar-track, #verified-url-list::-webkit-scrollbar-track, #url-scan-info-panel::-webkit-scrollbar-track { background: var(--scrollbar-track-color); }
+        #results-container::-webkit-scrollbar-thumb, #file-tree-container::-webkit-scrollbar-thumb, #help-modal-content::-webkit-scrollbar-thumb, #vulnerabilities-list::-webkit-scrollbar-thumb, #theme-editor-properties::-webkit-scrollbar-thumb, #url-scan-modal-content::-webkit-scrollbar-thumb, #verified-url-list::-webkit-scrollbar-thumb, #url-scan-info-panel::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-color); border-radius: 4px; border: 2px solid var(--scrollbar-track-color); }
         .ext-shield { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-family: 'Verdana', sans-serif; color: white; height: 20px; line-height: 16px; }
 
-        /* 테마 편집 모드에서 메인 컨텐츠 비활성화 (블러 제거) */
+        /* 테마 편집 모드에서 메인 컨텐츠 비활성화 */
         body.theme-editing-active .main-content {
             pointer-events: none;
         }
@@ -39,9 +39,11 @@
         .preview-hover-danger { background-color: var(--button-danger-hover-bg) !important; }
         .preview-hover-simple { background-color: var(--button-scan-simple-hover-bg) !important; }
         .preview-hover-precision { background-color: var(--button-scan-precision-hover-bg) !important; }
+        .preview-hover-url { background-color: var(--button-url-scan-hover-bg) !important; }
         
         #start-scan-simple-btn.preview-active { background-color: var(--button-scan-simple-bg) !important; color: var(--button-scan-text) !important; }
         #start-scan-precision-btn.preview-active { background-color: var(--button-scan-precision-bg) !important; color: var(--button-scan-text) !important; }
+        #start-scan-url-btn.preview-active { background-color: var(--button-url-scan-bg) !important; color: var(--button-url-scan-text) !important; }
 
 
         /* 토글 스위치 스타일 */
@@ -51,35 +53,46 @@
         .toggle-slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .toggle-slider { background-color: #00FF41; }
         input:checked + .toggle-slider:before { transform: translateX(14px); }
+
+        /* 드롭다운 화살표 */
+        #scan-options-toggle h2::after {
+            content: ' ▾';
+            font-size: 0.8em;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        #scan-options-toggle.open h2::after {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="select-none">
-    <div id="title-bar" class="h-8 bg-black flex justify-between items-center fixed top-0 left-0 right-0 z-50">
+    <div id="title-bar" class="h-8 flex justify-between items-center fixed top-0 left-0 right-0 z-50 bg-[var(--title-bar-bg)]">
         <div class="flex items-center pl-3">
-            <div class="text-sm font-bold">cojuscan</div>
-            <span id="app-version" class="ml-2 text-xs font-mono text-gray-400"></span>
+            <div class="text-sm font-bold text-[var(--title-bar-text-color)]">cojuscan</div>
+            <span id="app-version" class="ml-2 text-xs font-mono text-[var(--title-bar-version-text-color)]"></span>
         </div>
         <div id="title-bar-btns" class="flex items-center h-full">
             <div class="relative">
-                <button id="theme-btn" class="px-3 h-full hover:bg-gray-700 transition-colors flex items-center" title="Change Theme">
-                    <img src="./build/theme.svg" alt="Theme Icon" class="w-4 h-4">
-                    </button>
+                <button id="theme-btn" class="px-3 h-full hover:bg-[var(--title-bar-button-hover-bg)] transition-colors flex items-center text-[var(--title-bar-button-color)]" title="Change Theme">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                </button>
                 <div id="theme-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-[var(--secondary-bg)] border border-[var(--border-color)] rounded-md shadow-lg z-20">
-                    </div>
+                </div>
             </div>
             <div class="relative">
-                <button id="lang-btn" class="px-3 h-full hover:bg-gray-700 transition-colors flex items-center" title="Change Language">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                 <button id="lang-btn" class="px-3 h-full hover:bg-[var(--title-bar-button-hover-bg)] transition-colors flex items-center text-[var(--title-bar-button-color)]" title="Change Language">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                 </button>
                 <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-28 bg-[var(--secondary-bg)] border border-[var(--border-color)] rounded-md shadow-lg">
-                    </div>
+                </div>
             </div>
-            <button id="minimize-btn" class="px-3 h-full hover:bg-gray-700 transition-colors"><svg width="12" height="12" viewBox="0 0 12 12"><rect fill="#E0E0E0" width="10" height="1" x="1" y="6"></rect></svg></button>
-            <button id="maximize-btn" class="px-3 h-full hover:bg-gray-700 transition-colors">
-                <svg id="maximize-icon" width="12" height="12" viewBox="0 0 12 12"><rect width="9" height="9" x="1.5" y="1.5" fill="none" stroke="#E0E0E0" stroke-width="1"></rect></svg>
-                <svg id="unmaximize-icon" width="12" height="12" viewBox="0 0 12 12" class="hidden"><path fill="none" stroke="#E0E0E0" stroke-width="1" d="M3.5,3.5 L3.5,8.5 L8.5,8.5 M3.5,3.5 L8.5,3.5 M2.5,2.5 L2.5,7.5 L7.5,7.5"></path></svg>
+             <button id="minimize-btn" class="px-3 h-full hover:bg-[var(--title-bar-button-hover-bg)] transition-colors text-[var(--title-bar-button-color)]"><svg width="12" height="12" viewBox="0 0 12 12"><rect fill="currentColor" width="10" height="1" x="1" y="6"></rect></svg></button>
+            <button id="maximize-btn" class="px-3 h-full hover:bg-[var(--title-bar-button-hover-bg)] transition-colors text-[var(--title-bar-button-color)]">
+                <svg id="maximize-icon" width="12" height="12" viewBox="0 0 12 12"><rect width="9" height="9" x="1.5" y="1.5" fill="none" stroke="currentColor" stroke-width="1"></rect></svg>
+                <svg id="unmaximize-icon" width="12" height="12" viewBox="0 0 12 12" class="hidden"><path fill="none" stroke="currentColor" stroke-width="1" d="M3.5,3.5 L3.5,8.5 L8.5,8.5 M3.5,3.5 L8.5,3.5 M2.5,2.5 L2.5,7.5 L7.5,7.5"></path></svg>
             </button>
-            <button id="close-btn" class="px-3 h-full hover:bg-red-500 transition-colors"><svg width="12" height="12" viewBox="0 0 12 12"><polygon fill="#E0E0E0" points="11 1.576 10.424 1 6 5.424 1.576 1 1 1.576 5.424 6 1 10.424 1.576 11 6 6.576 10.424 11 11 10.424 6.576 6"></polygon></svg></button>
+            <button id="close-btn" class="px-3 h-full hover:bg-[var(--title-bar-close-button-hover-bg)] hover:text-[var(--title-bar-close-button-hover-color)] transition-colors text-[var(--title-bar-button-color)]"><svg width="12" height="12" viewBox="0 0 12 12"><polygon fill="currentColor" points="11 1.576 10.424 1 6 5.424 1.576 1 1 1.576 5.424 6 1 10.424 1.576 11 6 6.576 10.424 11 11 10.424 6.576 6"></polygon></svg></button>
         </div>
     </div>
 
@@ -103,9 +116,31 @@
         </aside>
 
         <main class="w-2/3 p-6 flex flex-col">
-            <header class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-[var(--accent-color)]" data-i18n="vulnerabilityScan">Vulnerability Scan</h2>
+            <header class="relative flex justify-between items-center mb-4">
+                <div>
+                    <div id="scan-options-toggle" class="cursor-pointer inline-block">
+                        <h2 class="text-2xl font-bold text-[var(--accent-color)]" data-i18n="vulnerabilityScan">Vulnerability Scan</h2>
+                    </div>
+                    <div id="scan-options-dropdown" class="hidden absolute top-full left-0 mt-2 w-72 bg-[var(--secondary-bg)] border border-[var(--border-color)] rounded-md shadow-lg z-20">
+                        <div class="p-4 space-y-3">
+                            <h4 class="text-sm font-bold text-[var(--text-color)]" data-i18n="scanOptions">Scan Options</h4>
+                            <label class="flex items-center text-sm text-[var(--text-color-dark)] cursor-pointer">
+                                <input type="checkbox" id="ignore-integrity-check" class="form-checkbox h-4 w-4 bg-gray-900 border-gray-600 rounded focus:ring-green-500 mr-2">
+                                <span data-i18n="ignoreIntegrity">Ignore Missing Integrity Checks</span>
+                            </label>
+                            <label class="flex items-center text-sm text-[var(--text-color-dark)] cursor-pointer">
+                                <input type="checkbox" id="ignore-console-log-check" class="form-checkbox h-4 w-4 bg-gray-900 border-gray-600 rounded focus:ring-green-500 mr-2">
+                                <span data-i18n="ignoreConsoleLogs">Ignore console.log Warnings</span>
+                            </label>
+                            <label class="flex items-center text-sm text-[var(--text-color-dark)] cursor-pointer">
+                                <input type="checkbox" id="ignore-cors-wildcard-check" class="form-checkbox h-4 w-4 bg-gray-900 border-gray-600 rounded focus:ring-green-500 mr-2">
+                                <span data-i18n="ignoreCorsWildcard">Ignore CORS Wildcard Policy</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
                 <div class="flex space-x-2">
+                    <button id="start-scan-url-btn" class="bg-[var(--button-url-scan-bg)] hover:bg-[var(--button-url-scan-hover-bg)] text-[var(--button-url-scan-text)] font-bold py-2 px-4 rounded-lg transition duration-200" data-i18n="startUrlScan">URL 분석</button>
                     <button id="start-scan-simple-btn" class="bg-[var(--button-scan-simple-bg)] hover:bg-[var(--button-scan-simple-hover-bg)] text-[var(--button-scan-text)] font-bold py-2 px-4 rounded-lg transition duration-200 disabled:bg-[var(--button-disabled-bg)] disabled:text-[var(--button-disabled-text)] disabled:cursor-not-allowed" disabled data-i18n="startSimpleScan">단순 검사</button>
                     <button id="start-scan-precision-btn" class="bg-[var(--button-scan-precision-bg)] hover:bg-[var(--button-scan-precision-hover-bg)] text-[var(--button-scan-text)] font-bold py-2 px-4 rounded-lg transition duration-200 disabled:bg-[var(--button-disabled-bg)] disabled:text-[var(--button-disabled-text)] disabled:cursor-not-allowed" disabled data-i18n="startPrecisionScan">정밀 검사</button>
                 </div>
@@ -130,13 +165,13 @@
                 <h2 class="text-2xl font-bold text-[var(--accent-color)]" data-i18n="helpTitle">도움말</h2>
                 <button id="close-modal-btn" class="text-2xl text-[var(--text-color-dark)] hover:text-white">&times;</button>
             </div>
-            <div id="help-modal-content" class="flex-grow overflow-y-auto pr-2 text-sm">
+            <div id="help-modal-content" class="flex-grow overflow-y-auto pr-2 text-sm text-[var(--help-modal-text-color)]">
                 <div class="mb-6">
                     <h3 class="text-xl font-semibold mb-3 border-b-2 border-[var(--accent-color)] pb-2" data-i18n="detectableVulnerabilities">탐지 가능 취약점</h3>
                     <div class="grid grid-cols-2 gap-6 h-[250px]">
                         <div id="vulnerabilities-list" class="overflow-y-auto pr-2"></div>
-                        <div id="vuln-details-panel" class="bg-black p-4 rounded-md text-[var(--text-color)]">
-                            <p class="text-[var(--text-color-dark)]" data-i18n="clickVulnerabilityToSeeDetails">왼쪽 목록에서 취약점 항목을 클릭하여 설명을 확인하세요.</p>
+                        <div id="vuln-details-panel" class="p-4 rounded-md bg-[var(--help-modal-details-bg)] text-[var(--help-modal-details-text-color)]">
+                            <p data-i18n="clickVulnerabilityToSeeDetails">왼쪽 목록에서 취약점 항목을 클릭하여 설명을 확인하세요.</p>
                         </div>
                     </div>
                 </div>
@@ -148,27 +183,133 @@
         </div>
     </div>
 
+    <div id="url-scan-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-[var(--secondary-bg)] rounded-lg shadow-lg p-6 w-full max-w-6xl flex flex-col border-2 border-[var(--url-modal-border-color)]" style="height: 80vh;">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <div class="flex items-center">
+                    <h2 class="text-2xl font-bold text-[var(--url-modal-header-color)]" data-i18n="urlScanTitle">URL 취약점 분석</h2>
+                    <button id="url-scan-info-btn" class="ml-3 text-2xl text-[var(--text-color-dark)] hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    </button>
+                </div>
+                <button id="close-url-modal-btn" class="text-2xl text-[var(--text-color-dark)] hover:text-white">&times;</button>
+            </div>
+            <div class="flex flex-grow min-h-0">
+                <div id="url-scan-info-panel" class="w-0 p-0 overflow-y-auto bg-[var(--main-bg)] rounded-lg transition-all duration-300 ease-in-out">
+                    <div class="p-4 text-sm text-[var(--text-color-dark)]">
+                        <h4 class="font-bold text-lg text-[var(--accent-color)] mb-3" data-i18n="urlScanInfoTitle">주의사항</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <h5 class="font-semibold text-[var(--text-color)]" data-i18n="urlScanInfoCase1Title">✅ 분석 가능한 경우</h5>
+                                <p data-i18n="urlScanInfoCase1Desc">HTML, CSS, JavaScript 파일들이 서버에 개별적으로 배포된 정적 웹사이트. (예: 순수 HTML/CSS/JS, Jekyll, Hugo 기반 사이트)</p>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-[var(--text-color)]" data-i18n="urlScanInfoCase2Title">⚠️ 부분적으로 분석 가능한 경우</h5>
+                                <p data-i18n="urlScanInfoCase2Desc">리액트(React), Vue 등 빌드 과정을 거치는 사이트. 이 경우 빌드된 최종 JavaScript 파일 하나만 분석됩니다. 원본 소스 코드를 분석하려면 '디렉토리 선택' 기능을 사용하세요.</p>
+                            </div>
+                            <div>
+                                <h5 class="font-semibold text-[var(--text-color)]" data-i18n="urlScanInfoReasonTitle">이유</h5>
+                                <p data-i18n="urlScanInfoReasonDesc">URL 분석은 실제 사용자가 브라우저로 보는 배포된 파일들만 접근할 수 있습니다. 개발용 소스코드(`src` 폴더 등)는 서버에 배포되지 않으므로 URL로 직접 접근하여 분석할 수 없습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="url-scan-main-content" class="flex-grow transition-all duration-300 ease-in-out flex">
+                    <div id="url-scan-modal-content" class="w-2/3 pr-4 flex flex-col overflow-y-auto">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold mb-3 text-[var(--accent-color)]" data-i18n="urlScanStep1">1단계: 분석 환경 준비</h3>
+                            <div class="mb-4">
+                                <h4 class="text-md font-semibold mb-2 flex items-center"><span class="bg-gray-700 text-white rounded-full h-6 w-6 flex items-center justify-center mr-2">1</span><span data-i18n="urlScanSubStep1Title"></span></h4>
+                                <p class="text-sm text-[var(--text-color-dark)] mb-2 ml-8" data-i18n="urlScanSubStep1Desc"></p>
+                                <div id="url-scan-meta-tag-container" class="relative p-2 ml-8 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md font-mono text-sm cursor-pointer">
+                                    <span id="url-scan-meta-tag"></span>
+                                    <span id="copy-feedback" class="absolute top-2 right-2 text-xs text-[var(--accent-color)] opacity-0 transition-opacity"></span>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <h4 class="text-md font-semibold mb-2 flex items-center"><span class="bg-gray-700 text-white rounded-full h-6 w-6 flex items-center justify-center mr-2">2</span><span data-i18n="urlScanSubStep2Title"></span></h4>
+                                <p class="text-sm text-[var(--text-color-dark)] mb-2 ml-8" data-i18n="urlScanSubStep2Desc"></p>
+                                <div class="p-2 ml-8 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md font-mono text-sm">
+                                    <span class="text-gray-500">your-project/</span><br>
+                                    ├── <span class="text-blue-400">cojuscan/</span><br>
+                                    │   └── <span class="text-yellow-400">cojuscan.js</span><br>
+                                    ├── index.html<br>
+                                    └── ...
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                 <h4 class="text-md font-semibold mb-2 flex items-center"><span class="bg-gray-700 text-white rounded-full h-6 w-6 flex items-center justify-center mr-2">3</span><span data-i18n="urlScanSubStep3Title"></span></h4>
+                                <p class="text-sm text-[var(--text-color-dark)] mb-2 ml-8" data-i18n="urlScanSubStep3Desc"></p>
+                                <div id="url-scan-code-block-container" class="relative p-2 ml-8 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md font-mono text-sm cursor-pointer">
+                                    <span id="code-block-copy-feedback" class="absolute top-2 right-2 text-xs text-[var(--accent-color)] opacity-0 transition-opacity"></span>
+                                    <div id="url-scan-code-block">
+                                        <span class="text-gray-500">// cojuscan.js</span><br>
+                                        <span class="text-purple-400">import</span> <span class="text-yellow-400">'/src/main.js'</span>;<br>
+                                        <span class="text-purple-400">import</span> <span class="text-gray-200">App</span> <span class="text-purple-400">from</span> <span class="text-yellow-400">'/App.vue'</span>;<br>
+                                        <span class="text-purple-400">import</span>(<span class="text-yellow-400">'/components/Header.js'</span>);<br>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold mb-3 text-[var(--accent-color)]" data-i18n="urlScanStep2"></h3>
+                            <p class="text-sm text-[var(--text-color-dark)] mb-2" data-i18n="urlScanStep2Desc"></p>
+                            <input type="url" id="url-scan-input" class="w-full p-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md" placeholder="https://example.com">
+                        </div>
+
+                        <div class="mt-auto pt-4">
+                            <div id="url-scan-progress-container" class="hidden mb-2">
+                                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                    <div id="url-scan-progress-bar" class="bg-[var(--url-modal-progress-bar-bg)] h-2.5 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <p id="url-scan-progress-text" class="text-center text-[var(--url-modal-header-color)] text-sm mt-1"></p>
+                            </div>
+                            <p id="url-scan-error-message" class="text-red-400 text-center text-sm mt-2 h-4"></p>
+                             <button id="url-scan-start-btn" class="w-full bg-[var(--button-url-scan-bg)] hover:bg-[var(--button-url-scan-hover-bg)] text-[var(--button-url-scan-text)] font-bold py-2 px-4 rounded-lg transition duration-200 mt-2" data-i18n="startScanAction"></button>
+                        </div>
+                    </div>
+                    <div class="w-1/3 pl-4 border-l border-[var(--border-color)] flex flex-col">
+                        <h3 class="text-lg font-semibold mb-2" data-i18n="verifiedUrlListTitle"></h3>
+                        <div id="verified-url-list" class="flex-grow overflow-y-auto bg-[var(--main-bg)] rounded-md p-2">
+                            <p class="text-sm text-[var(--text-color-dark)] text-center py-4" data-i18n="noVerifiedUrls"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="theme-editor-panel" class="hidden fixed bottom-0 left-0 right-0 bg-[#1A1A1A] border-t border-[#2a2a2a] shadow-2xl z-50 flex flex-col transition-all">
         <div class="flex items-center p-3 space-x-4 border-b border-[#2a2a2a]">
             <h3 class="text-lg font-bold text-[#00FF41]" data-i18n="themeEditorTitle">테마 편집기</h3>
             <input type="text" id="custom-theme-name" data-i18n-placeholder="themeNamePlaceholder" class="w-48 p-2 bg-[#1f2937] border border-[#2a2a2a] rounded-md focus:outline-none focus:ring-2 focus:ring-[#00FF41] text-sm text-[#E0E0E0]">
             <button id="save-theme-btn" class="bg-[#16a34a] hover:bg-[#22c55e] text-white font-bold py-2 px-3 rounded-lg text-sm" data-i18n="addTheme">추가</button>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
                 <label class="flex items-center space-x-2 text-sm text-[#E0E0E0] cursor-pointer">
-                    <span data-i18n="hoverPreview">호버 미리보기</span>
+                    <span data-i18n="hoverPreview">호버</span>
                     <label class="toggle-switch"><input type="checkbox" id="hover-preview-toggle"><span class="toggle-slider"></span></label>
                 </label>
                 <label class="flex items-center space-x-2 text-sm text-[#E0E0E0] cursor-pointer">
-                    <span data-i18n="activePreview">활성화 미리보기</span>
+                    <span data-i18n="activePreview">활성화</span>
                     <label class="toggle-switch"><input type="checkbox" id="active-preview-toggle"><span class="toggle-slider"></span></label>
+                </label>
+                <label class="flex items-center space-x-2 text-sm text-[#E0E0E0] cursor-pointer">
+                    <span data-i18n="helpModalPreview">도움말</span>
+                    <label class="toggle-switch"><input type="checkbox" id="help-modal-preview-toggle"><span class="toggle-slider"></span></label>
+                </label>
+                <label class="flex items-center space-x-2 text-sm text-[#E0E0E0] cursor-pointer">
+                    <span data-i18n="urlModalPreview">URL모달</span>
+                    <label class="toggle-switch"><input type="checkbox" id="url-modal-preview-toggle"><span class="toggle-slider"></span></label>
                 </label>
             </div>
             <div class="flex-grow"></div>
             <button id="close-theme-editor-btn" class="bg-[#dc2626] hover:bg-[#ef4444] text-white font-bold py-2 px-3 rounded-lg text-sm" data-i18n="close">닫기</button>
             <p id="theme-editor-message" class="text-yellow-400 text-xs h-4 absolute right-24"></p>
         </div>
-        <div id="theme-editor-properties" class="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 overflow-y-auto" style="max-height: 180px;">
-            </div>
+        <div id="theme-editor-properties" class="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-2 overflow-y-auto" style="max-height: 200px;">
+        </div>
     </div>
 
     <script src="./renderer.js"></script>

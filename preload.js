@@ -15,10 +15,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onScanProgress: (callback) => {
     const listener = (_event, value) => callback(value);
     ipcRenderer.on('scan:progress', listener);
-    // 리스너를 제거하는 함수를 반환하여 메모리 누수를 방지합니다.
+    // Return a function to remove the listener to prevent memory leaks
     return () => ipcRenderer.removeListener('scan:progress', listener);
   },
   
+  // --- URL Scan Functionality ---
+  startUrlScan: (url, verificationToken) => ipcRenderer.invoke('url:scan', { url, verificationToken }),
+  onUrlScanProgress: (callback) => {
+    const listener = (_event, value) => callback(value);
+    ipcRenderer.on('url-scan:progress', listener);
+    // Return a function to remove the listener
+    return () => ipcRenderer.removeListener('url-scan:progress', listener);
+  },
+
   // --- App Info ---
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
 

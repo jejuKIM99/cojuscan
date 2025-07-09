@@ -26,10 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
             detailedActionTitle: "상세 조치 권고",
             detailedActionIntro: "가장 시급하고 중요한 수정 사항은 다음과 같습니다.",
             noHighVulnerability: "심각(High) 등급의 취약점이 발견되지 않았습니다. 중간 등급의 취약점을 검토하고 수정하는 것을 권장합니다.",
-            // 1. 모든 항목 무시 시 권고 사항 추가
             allIgnoredRecommendation: "발견된 모든 잠재적 위험을 인지하고 관리 대상으로 지정하셨습니다. 현재 유효한 위험은 없습니다. 다만, 프로젝트의 요구사항 변경이나 새로운 공격 기법에 대응하기 위해 무시한 항목들을 주기적으로 재검토하는 것이 안전합니다.",
             nextStepsTitle: "향후 계획",
-            // 2. 결과별 동적 '향후 계획' 추가
             nextStepsContent: {
                 excellent: "현재의 높은 보안 수준을 유지하기 위해, 새로운 기능 추가 시 코드 리뷰와 함께 정적 분석을 개발 프로세스의 일부로 정착시키는 것을 권장합니다. CI/CD 파이프라인에 보안 스캔을 통합하여 지속적인 보안을 확보하세요.",
                 good: "양호한 상태를 더욱 강화하기 위해, 발견된 중간 등급 취약점들의 근본 원인을 분석하고 팀 내에 공유하여 유사한 실수를 방지하는 것이 중요합니다. 수정 후에는 반드시 재검사를 통해 패치가 올바르게 적용되었는지 확인하세요.",
@@ -40,8 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
             conclusion: {
                 excellent: `전반적으로 우수한 보안 수준을 유지하고 있습니다. 발견된 낮은 등급의 항목들을 검토하여 시스템의 완성도를 더욱 높이시길 권장합니다.`,
                 good: `양호한 보안 상태이지만, 발견된 중간 등급의 취약점들은 애플리케이션의 안정성을 저해할 수 있습니다. 해당 항목들에 대한 수정 작업을 진행하는 것이 좋습니다.`,
-                moderate: `잠재적인 보안 위협이 존재하는 상태입니다. 특히 '${'${highPriorityName}'}'와 같이 여러 번 발견된 심각 등급의 취약점을 최우선으로 해결하여 공격 표면을 줄여야 합니다.`,
-                weak: `즉각적인 조치가 필요한 심각한 보안 위협이 다수 발견되었습니다. '${'${highPriorityName}'}' 취약점 해결을 최우선 과제로 삼고, 전체 시스템에 대한 긴급 보안 점검을 수행할 것을 강력히 권고합니다.`
+                moderate_with_name: `잠재적인 보안 위협이 존재하는 상태입니다. 특히 '${'${highPriorityName}'}' 유형의 취약점을 최우선으로 해결하여 공격 표면을 줄여야 합니다.`,
+                moderate_without_name: `잠재적인 보안 위협이 존재하는 상태입니다. 발견된 여러 취약점들을 우선적으로 해결하여 공격 표면을 줄여야 합니다.`,
+                weak_with_name: `즉각적인 조치가 필요한 보안 위협이 다수 발견되었습니다. '${'${highPriorityName}'}' 취약점 해결을 최우선 과제로 삼고, 전체 시스템에 대한 긴급 보안 점검을 수행할 것을 강력히 권고합니다.`,
+                weak_without_name: `즉각적인 조치가 필요한 심각한 보안 위협이 다수 발견되었습니다. 전체 시스템에 대한 긴급 보안 점검을 수행할 것을 강력히 권고합니다.`
             }
         },
         en: {
@@ -79,8 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
             conclusion: {
                 excellent: `Overall, the project maintains an excellent security level. It is recommended to review the identified low-severity items to further improve system integrity.`,
                 good: `The project has a good security posture, but the detected medium-severity vulnerabilities could compromise application stability. It is advisable to proceed with fixing these items.`,
-                moderate: `Potential security threats exist. It is crucial to reduce the attack surface by prioritizing the resolution of high-severity vulnerabilities like '${'${highPriorityName}'}', which were found multiple times.`,
-                weak: `Multiple critical security threats requiring immediate action have been found. Addressing High-severity vulnerabilities such as '${'${highPriorityName}'}' should be the top priority, and we strongly recommend conducting an emergency security audit of the entire system.`
+                moderate_with_name: `Potential security threats exist. It is crucial to reduce the attack surface by prioritizing the resolution of vulnerabilities like '${'${highPriorityName}'}'.`,
+                moderate_without_name: `Potential security threats exist. It is crucial to reduce the attack surface by prioritizing the resolution of the detected vulnerabilities.`,
+                weak_with_name: `Multiple critical security threats requiring immediate action have been found. Addressing vulnerabilities such as '${'${highPriorityName}'}' should be the top priority, and we strongly recommend conducting an emergency security audit of the entire system.`,
+                weak_without_name: `Multiple critical security threats requiring immediate action have been found. We strongly recommend conducting an emergency security audit of the entire system.`
             }
         }
     };
@@ -124,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         summaryHtml += `<h4>${t.detailedActionTitle}</h4>`;
         
-        // 1. 모든 항목을 무시한 경우에 대한 로직 추가
         if (totalActive === 0 && totalIgnored > 0) {
             summaryHtml += `<p>${t.allIgnoredRecommendation}</p>`;
         } else {
@@ -139,26 +140,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        let conclusionKey;
-        if (score >= 90) conclusionKey = 'excellent';
-        else if (score >= 70) conclusionKey = 'good';
-        else if (score >= 40) conclusionKey = 'moderate';
-        else conclusionKey = 'weak';
+        let conclusionScoreKey;
+        if (score >= 90) conclusionScoreKey = 'excellent';
+        else if (score >= 70) conclusionScoreKey = 'good';
+        else if (score >= 40) conclusionScoreKey = 'moderate';
+        else conclusionScoreKey = 'weak';
         
-        // 2. 동적인 '향후 계획' 선택 로직 추가
-        summaryHtml += `<h4>${t.nextStepsTitle}</h4><p>${t.nextStepsContent[conclusionKey]}</p>`;
+        summaryHtml += `<h4>${t.nextStepsTitle}</h4><p>${t.nextStepsContent[conclusionScoreKey]}</p>`;
         
-        let conclusionText = t.conclusion[conclusionKey];
-        if (high > 0 && sortedVulns.length > 0) {
-            const highPriorityName = sortedVulns.find(([name, count]) => {
-                return activeFindings.some(f => (lang === 'en' ? f.name_en : f.name) === name && f.severity === 'High');
-            });
-            if(highPriorityName) {
-               conclusionText = conclusionText.replace('${highPriorityName}', highPriorityName[0]);
+        // --- MODIFICATION START ---
+
+        // Find the name of the most prominent vulnerability to highlight in the conclusion.
+        let highPriorityName = null;
+        if (sortedVulns.length > 0) {
+            // Priority 1: Find the most frequent 'High' severity vulnerability.
+            let item = sortedVulns.find(([name, count]) => 
+                activeFindings.some(f => (lang === 'en' ? f.name_en : f.name) === name && f.severity === 'High')
+            );
+            // Priority 2: If no 'High' vulns, find the most frequent 'Medium' severity vulnerability.
+            if (!item) {
+                item = sortedVulns.find(([name, count]) => 
+                    activeFindings.some(f => (lang === 'en' ? f.name_en : f.name) === name && f.severity === 'Medium')
+                );
             }
+            if (item) {
+                highPriorityName = item[0];
+            }
+        }
+
+        let conclusionText = '';
+        // For moderate and weak conclusions, choose the template based on whether we have a name to show.
+        if (conclusionScoreKey === 'moderate' || conclusionScoreKey === 'weak') {
+            if (highPriorityName) {
+                const template = t.conclusion[`${conclusionScoreKey}_with_name`];
+                conclusionText = template.replace('${highPriorityName}', highPriorityName);
+            } else {
+                conclusionText = t.conclusion[`${conclusionScoreKey}_without_name`];
+            }
+        } else {
+            // For excellent and good, the logic remains the same.
+            conclusionText = t.conclusion[conclusionScoreKey];
         }
         
         summaryHtml += `<h4>${t.conclusionTitle}</h4><p>${conclusionText}</p>`;
+        
+        // --- MODIFICATION END ---
         
         document.getElementById('summary-text').innerHTML = summaryHtml;
     }
