@@ -163,7 +163,6 @@ const createWindow = () => {
         // 이미 인증이 진행 중이면 새로 시작하지 않음
         if (isAuthInProgress) {
             console.log('An authentication process is already in progress.');
-            // 에러를 던져서 UI에서 알 수 있게 하거나, 조용히 무시할 수 있습니다.
             throw new Error('인증이 이미 진행중입니다.');
         }
         isAuthInProgress = true; // 인증 시작, 잠금 설정
@@ -172,7 +171,7 @@ const createWindow = () => {
         const githubAuthState = base64URLEncode(crypto.randomBytes(16));
         const rawVerifier = crypto.randomBytes(32);
         const codeVerifier = base64URLEncode(rawVerifier);
-        const challengeBuffer = sha256(rawVerifier);
+        const challengeBuffer = sha256(codeVerifier);
         const codeChallenge = base64URLEncode(challengeBuffer);
         
         const authUrl = new URL('https://github.com/login/oauth/authorize');
@@ -226,13 +225,14 @@ const createWindow = () => {
             // 이 리스너는 현재 인증 흐름에 대해서만 동작합니다.
             app.on('open-url', handleAuthCallback);
 
+            // 타임아웃 처리: 5분 내에 인증이 완료되지 않으면 실패 처리
             setTimeout(() => {
                 app.removeListener('open-url', handleAuthCallback);
                 if (isAuthInProgress) { // 아직도 인증이 진행 중이라면 타임아웃 처리
                     reject(new Error('GitHub authentication timed out.'));
                     isAuthInProgress = false; // 타임아웃, 잠금 해제
                 }
-            }, 300000); // 5분 타임아웃
+            }, 300000); 
         });
     });
     // =================================================================
@@ -385,7 +385,8 @@ const createWindow = () => {
                 semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
 
                 semgrep.on('close', (code) => {
-                    if (code !== 0) { 
+                    // Semgrep은 취약점을 찾으면 종료 코드 1을 반환합니다. 코드 1까지는 정상 처리로 간주해야 합니다.
+                    if (code > 1) { 
                         console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
                         const filteredError = errorData.split('\n').filter(line => 
                             !line.includes('UserWarning: pkg_resources is deprecated') && 
@@ -393,11 +394,9 @@ const createWindow = () => {
                             line.trim() !== ''
                         ).join('\n').trim();
 
-                        let finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 종료되었습니다.`;
+                        let finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 비정상 종료되었습니다. 로컬 Python 환경이 손상되었을 수 있습니다. 앱을 재설치하거나 수동으로 Semgrep을 설치해보세요.`;
                         if (filteredError) {
                             finalErrorMessage = `스캔 실패. 상세: ${filteredError}`;
-                        } else if (code > 1) {
-                            finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 비정상 종료되었습니다. 로컬 Python 환경이 손상되었을 수 있습니다. 앱을 재설치하거나 수동으로 Semgrep을 설치해보세요.`;
                         }
                         
                         return reject(new Error(finalErrorMessage));
@@ -406,6 +405,7 @@ const createWindow = () => {
                     if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
                     try {
                         if (jsonData.trim() === '') {
+                             // 종료 코드가 0 또는 1 이지만 JSON 출력이 없는 경우, 발견된 취약점이 없는 것으로 간주하고 빈 객체를 반환합니다.
                             return resolve({});
                         }
                         const parsedOutput = JSON.parse(jsonData);
