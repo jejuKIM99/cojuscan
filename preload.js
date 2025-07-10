@@ -33,10 +33,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // --- Settings ---
   getSetting: (key) => ipcRenderer.invoke('settings:get', key),
-  setSetting: (key, value) => ipcRenderer.send('settings:set', { key, value }),
+  setSetting: (key, value) => ipcRenderer.invoke('settings:set', key, value),
 
   // --- PDF Export ---
   exportToPDF: (data) => ipcRenderer.invoke('export:pdf', data),
   onRenderReportData: (callback) => ipcRenderer.on('render-report-data', (event, ...args) => callback(...args)),
   reportReadyForPDF: () => ipcRenderer.send('report-ready-for-pdf'),
+
+  exportTheme: (themeData) => ipcRenderer.invoke('theme:export', themeData),
+  importTheme: () => ipcRenderer.invoke('theme:import'),
+
+  onGetRendererState: (callback) => ipcRenderer.on('get-renderer-state', callback),
+  sendRendererStateForQuit: (state) => ipcRenderer.send('renderer-state-for-quit', state),
 });

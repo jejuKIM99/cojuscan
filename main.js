@@ -10,7 +10,7 @@ const Store = require('electron-store');
 const { scanContent, vulnerabilityPatterns } = require('./scanner.js');
 
 const store = new Store();
-
+// console.log('>>> 설정 파일 경로(config.json path):', store.path);
 const IS_WINDOWS = process.platform === 'win32';
 const isPackaged = app.isPackaged;
 const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
@@ -158,15 +158,28 @@ const createWindow = () => {
                 semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
 
                 semgrep.on('close', (code) => {
-                    if (code > 1) { 
+                    // MODIFICATION START: Enhanced error handling
+                    if (code !== 0) { 
                         console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
                         const filteredError = errorData.split('\n').filter(line => 
                             !line.includes('UserWarning: pkg_resources is deprecated') && 
-                            !line.includes('(ca-certs): Ignored 1 trust anchors')
+                            !line.includes('(ca-certs): Ignored 1 trust anchors') &&
+                            line.trim() !== ''
                         ).join('\n').trim();
-                        const finalErrorMessage = filteredError || `스캔 엔진(Semgrep)이 오류 코드 ${code}로 종료되었습니다.`;
-                        return reject(new Error(`스캔 실패. 상세: ${finalErrorMessage}`));
+
+                        let finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 종료되었습니다.`;
+                        if (filteredError) {
+                            finalErrorMessage = `스캔 실패. 상세: ${filteredError}`;
+                        } else if (code > 1) { // Exit code 1 can sometimes mean vulnerabilities found, but > 1 is usually a hard error.
+                            finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 비정상 종료되었습니다. 로컬 Python 환경이 손상되었을 수 있습니다. 앱을 재설치하거나 수동으로 Semgrep을 설치해보세요.`;
+                        }
+
+                        // If there's an error but we still got some JSON data, it might be partial.
+                        // We will prioritize the error message over potentially incomplete results.
+                        return reject(new Error(finalErrorMessage));
                     }
+                    // MODIFICATION END
+
                     if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
                     try {
                         if (jsonData.trim() === '') {
@@ -267,16 +280,14 @@ const createWindow = () => {
 
             // 3. Parse imports from cojuscan.js (MODIFIED)
             sendProgress(50, `분석 대상 파일 목록 파싱 중...`);
-            const importRegex = /import\s+.*\s+from\s+['"](.+?)['"]/g;
-            const dynamicImportRegex = /import\s*\(\s*['"](.+?)['"]\s*\)/g;
-            const bareImportRegex = /import\s+['"](.+?)['"];/g; // <<< THIS LINE IS NEW
-            
+            const comprehensiveImportRegex = /import(?:[\s\S]*?from)?\s*['"](.[^'"]+)['"]/g;
+
             const filePaths = new Set();
             let match;
 
-            while ((match = importRegex.exec(cojuscanContent)) !== null) filePaths.add(match[1]);
-            while ((match = dynamicImportRegex.exec(cojuscanContent)) !== null) filePaths.add(match[1]);
-            while ((match = bareImportRegex.exec(cojuscanContent)) !== null) filePaths.add(match[1]); // <<< THIS LINE IS NEW
+            while ((match = comprehensiveImportRegex.exec(cojuscanContent)) !== null) {
+                filePaths.add(match[1]);
+            }
 
             const fileList = Array.from(filePaths);
             if (fileList.length === 0) {
@@ -339,6 +350,64 @@ const createWindow = () => {
         }
     });
 
+    // --- NEW: Theme Import/Export Handlers ---
+    ipcMain.handle('theme:export', async (event, themeData) => {
+        const { name, theme } = themeData;
+        if (!name || !theme) {
+            return { success: false, message: '잘못된 테마 데이터입니다.' };
+        }
+    
+        const { canceled, filePath } = await dialog.showSaveDialog({
+            title: '테마 내보내기',
+            defaultPath: `Cojuscan-Theme-${name}.json`,
+            filters: [{ name: 'JSON 파일', extensions: ['json'] }]
+        });
+    
+        if (canceled || !filePath) {
+            return { success: false, message: '내보내기를 취소했습니다.' };
+        }
+    
+        try {
+            // isShared: true 플래그를 추가하여 불러올 때 공유 테마임을 명시
+            fs.writeFileSync(filePath, JSON.stringify({ name, theme, isShared: true }, null, 2));
+            return { success: true };
+        } catch (error) {
+            console.error('테마 내보내기 실패:', error);
+            return { success: false, message: `파일 저장에 실패했습니다: ${error.message}` };
+        }
+    });
+    
+    ipcMain.handle('theme:import', async () => {
+        const { canceled, filePaths } = await dialog.showOpenDialog({
+            title: '공유 테마 불러오기',
+            properties: ['openFile'],
+            filters: [{ name: 'JSON 파일', extensions: ['json'] }]
+        });
+    
+        if (canceled || filePaths.length === 0) {
+            return null;
+        }
+    
+        try {
+            const fileContent = fs.readFileSync(filePaths[0], 'utf-8');
+            const themeData = JSON.parse(fileContent);
+    
+            // 기본적인 파일 형식 검증
+            if (typeof themeData.name !== 'string' || typeof themeData.theme !== 'object' || themeData.name.trim() === '') {
+                throw new Error('잘못된 테마 파일 형식입니다.');
+            }
+            
+            // 불러온 테마는 항상 공유 테마로 처리
+            themeData.isShared = true;
+            return themeData;
+        } catch (error) {
+            console.error('테마 불러오기 실패:', error);
+            // 렌더러에서 null을 받아 오류를 처리하도록 함
+            return null;
+        }
+    });
+    // --- END NEW ---
+
 
     ipcMain.handle('dialog:openDirectory', async () => {
         const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });
@@ -364,7 +433,15 @@ const createWindow = () => {
     });
 
     ipcMain.handle('settings:get', (event, key) => store.get(key));
-    ipcMain.on('settings:set', (event, { key, value }) => store.set(key, value));
+    ipcMain.handle('settings:set', (event, key, value) => {
+        try {
+            store.set(key, value);
+            return { success: true };
+        } catch (error) {
+            console.error(`'${key}' 설정 저장 실패:`, error);
+            return { success: false, error: error.message };
+        }
+    });
     
     ipcMain.handle('export:pdf', async (event, data) => {
         const reportWindow = new BrowserWindow({
@@ -417,6 +494,50 @@ const createWindow = () => {
 
     mainWindow.loadFile('index.html');
 };
+let isQuitting = false;
+
+app.on('before-quit', (event) => {
+    if (isQuitting) {
+        return;
+    }
+    event.preventDefault(); // 기본 종료 동작을 막습니다.
+
+    console.log('종료 신호 감지. 렌더러 상태 저장을 시작합니다.');
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+
+    // 1. 렌더러에 현재 상태를 요청합니다.
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('get-renderer-state');
+    }
+
+    // 2. 렌더러로부터 상태를 받으면 저장하고 앱을 종료합니다.
+    ipcMain.once('renderer-state-for-quit', (e, state) => {
+        console.log('렌더러로부터 받은 상태:', Object.keys(state));
+        try {
+            // 받은 상태 객체의 모든 키와 값을 store에 저장합니다.
+            for (const [key, value] of Object.entries(state)) {
+                if (value !== undefined) { // undefined 값은 저장하지 않습니다.
+                    store.set(key, value);
+                }
+            }
+            console.log('모든 상태를 성공적으로 저장했습니다.');
+        } catch (error) {
+            console.error('종료 전 상태 저장 실패:', error);
+        } finally {
+            isQuitting = true;
+            app.quit(); // 모든 저장이 완료된 후 실제 앱을 종료합니다.
+        }
+    });
+
+    // 5초 타임아웃: 렌더러가 응답하지 않을 경우 강제 종료
+    setTimeout(() => {
+        if (!isQuitting) {
+            console.log('렌더러 응답 시간 초과. 강제 종료합니다.');
+            isQuitting = true;
+            app.quit();
+        }
+    }, 5000);
+});
 
 app.whenReady().then(createWindow);
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

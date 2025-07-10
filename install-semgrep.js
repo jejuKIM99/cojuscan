@@ -62,10 +62,10 @@ function downloadFile(url, dest) {
 }
 
 /**
- * Modifies the ._pth file in the embedded Python distribution to include site-packages.
+ * Modifies the ._pth file in the embedded Python distribution to include site-packages and scripts.
  * This is crucial for pip and its packages to be recognized.
  */
-function enableSitePackages() {
+function configurePathFile() {
     const pthFiles = fs.readdirSync(PYTHON_DIR).filter(f => f.endsWith('._pth'));
     if (pthFiles.length === 0) {
         logError('Could not find the ._pth file in the Python directory. Pip modules may not be found.');
@@ -74,20 +74,40 @@ function enableSitePackages() {
     const pthPath = path.join(PYTHON_DIR, pthFiles[0]);
     try {
         let content = fs.readFileSync(pthPath, 'utf8');
+        
+        // Define paths to add
+        const sitePackages = 'Lib/site-packages';
+        const scripts = 'Scripts';
+        let updated = false;
+
+        // Add site-packages if not present
+        if (!content.includes(sitePackages)) {
+            content = `${sitePackages}\n${content}`;
+            updated = true;
+        }
+        
+        // Add Scripts if not present
+        if (!content.includes(scripts)) {
+            content = `${scripts}\n${content}`;
+            updated = true;
+        }
+
         // Ensure 'import site' is not commented out.
         if (content.includes('#import site')) {
             content = content.replace(/#import site/g, 'import site');
-            fs.writeFileSync(pthPath, content);
-            logSuccess(`Enabled site-packages in ${pthFiles[0]} for module discovery.`);
-        } else if (!content.includes('import site')) {
-            content += '\nimport site';
-            fs.writeFileSync(pthPath, content);
-            logSuccess(`Added 'import site' to ${pthFiles[0]} for module discovery.`);
+            updated = true;
         }
+
+        if (updated) {
+            fs.writeFileSync(pthPath, content);
+            logSuccess(`Correctly configured ${pthFiles[0]} with necessary paths for module discovery.`);
+        }
+        
     } catch (error) {
         logError(`Failed to modify ${pthPath}: ${error.message}`);
     }
 }
+
 
 /**
  * Shows the final manual installation message if everything fails.
@@ -138,7 +158,7 @@ async function main() {
             fs.unlinkSync(zipPath);
             logSuccess('Python 압축 해제 완료.');
             
-            enableSitePackages(); // Enable site packages after extraction.
+            configurePathFile(); // Configure the path file right after extraction.
         } else {
             logSuccess('로컬 Python이 이미 존재합니다.');
         }

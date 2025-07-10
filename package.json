@@ -1,6 +1,6 @@
 {
   "name": "cojuscan",
-  "version": "1.3.3",
+  "version": "1.3.5-beta",
   "description": "A security scanner for source code with Simple and Precision (Semgrep) modes.",
   "main": "main.js",
   "scripts": {
