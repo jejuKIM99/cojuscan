@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // URL Scan Translations
             startUrlScan: "URL 분석", urlScanTitle: "URL 취약점 분석", urlScanInfoTitle: "주의사항", urlScanInfoCase1Title: "✅ 분석 가능한 경우", urlScanInfoCase1Desc: "HTML, CSS, JavaScript 파일들이 서버에 개별 파일로 배포된 정적 웹사이트. (예: 순수 HTML/CSS/JS, Jekyll, Hugo 기반 사이트)", urlScanInfoCase2Title: "⚠️ 부분적으로 분석 가능한 경우", urlScanInfoCase2Desc: "리액트(React), Vue 등 빌드 과정을 거치는 사이트. 이 경우 빌드된 최종 JavaScript 파일 하나만 분석됩니다. 원본 소스 코드를 분석하려면 '디렉토리 선택' 기능을 사용하세요.", urlScanInfoReasonTitle: "이유", urlScanInfoReasonDesc: "URL 분석은 실제 사용자가 브라우저로 보는 배포된 파일들만 접근할 수 있습니다. 개발용 소스코드(`src` 폴더 등)는 서버에 배포되지 않으므로 URL로 직접 접근하여 분석할 수 없습니다.", urlScanStep1: "1단계: 분석 환경 준비", urlScanSubStep1Title: "메타태그 삽입", urlScanSubStep1Desc: "분석할 사이트의 &lt;head&gt; 태그 안에 아래 메타 태그를 추가하세요.", urlScanSubStep2Title: "cojuscan.js 생성", urlScanSubStep2Desc: "사이트의 루트 경로에 아래와 같이 폴더와 파일을 생성하세요.", urlScanSubStep3Title: "파일 경로 추가 및 배포", urlScanSubStep3Desc: "생성한 cojuscan.js 파일에 분석할 모든 파일의 경로를 추가하세요. 아래 형식들을 지원합니다.", copied: "복사되었습니다!", urlScanStep2: "2단계: URL 입력 및 검사", urlScanStep2Desc: "사이트 배포가 완료되었다면, 분석할 URL을 입력하고 검사를 시작하세요. (예: https://example.com)", startScanAction: "검사 시작", verificationFailed: "소유권 확인 실패. 메타 태그가 정확히 삽입되었는지 확인하세요.", urlFetchFailed: "URL을 가져올 수 없습니다. 주소를 확인하거나 서버 상태를 점검하세요.", invalidUrl: "유효한 URL을 입력해주세요. (https://로 시작)", cojuscanJsNotFound: "`cojuscan/cojuscan.js` 파일을 찾을 수 없습니다. 파일이 정확한 위치에 있고, 서버에서 접근 가능한지 확인하세요.", verifiedUrlListTitle: "검증된 URL 목록", noVerifiedUrls: "검증된 URL이 없습니다.", rescan: "재검사", urlScanResourcesTitle: "URL 분석 리소스", noAnalyzedResources: "분석된 리소스가 없습니다.",
             // New Theme Translations
-            editTheme: "수정", exportTheme: "내보내기", importSharedTheme: "공유 테마 불러오기", sharedThemesTitle: "공유 테마", sharedThemeLimitError: "공유 테마는 최대 3개까지 추가할 수 있습니다.", themeImportError: "테마를 불러오는 데 실패했습니다. 파일이 손상되었거나 형식이 올바르지 않을 수 있습니다.", themeImportSuccess: "테마를 성공적으로 불러왔습니다!", themeNameReadonlyError: "수정 중인 테마의 이름은 변경할 수 없습니다.", themeEdit: "테마 수정", sharedThemeTooltip: "공유된 테마 (수정 불가)", saveChanges: "변경사항 저장",
+            editTheme: "Edit", exportTheme: "Export", importSharedTheme: "공유 테마 불러오기", sharedThemesTitle: "공유 테마", sharedThemeLimitError: "공유 테마는 최대 3개까지 추가할 수 있습니다.", themeImportError: "테마를 불러오는 데 실패했습니다. 파일이 손상되었거나 형식이 올바르지 않을 수 있습니다.", themeImportSuccess: "테마를 성공적으로 불러왔습니다!", themeNameReadonlyError: "수정 중인 테마의 이름은 변경할 수 없습니다.", themeEdit: "테마 수정", sharedThemeTooltip: "공유된 테마 (수정 불가)", saveChanges: "변경사항 저장",
             themeVarGroups: {
                 "제목 표시줄": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "배경 & 테두리": ['--main-bg', '--secondary-bg', '--border-color'], "텍스트 & 링크": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "기본 버튼": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "검사 버튼": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL 검사 버튼": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL 모달": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI 컴포넌트": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "도움말 모달": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "상태 & 기타": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
             },
@@ -194,14 +194,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center text-sm text-[var(--text-color)] hover:bg-[var(--button-secondary-hover-bg)] group';
                 
-                const nameSpan = document.createElement('a');
-                nameSpan.href = '#';
-                nameSpan.textContent = name;
-                nameSpan.className = 'flex-grow px-4 py-2';
-                nameSpan.addEventListener('click', (e) => { e.preventDefault(); saveAndApplyTheme(name); themeDropdown.classList.add('hidden'); });
+                // Animate long theme names
+                const nameLink = document.createElement('a');
+                nameLink.href = '#';
+                // This 'a' tag acts as a container for the animation
+                nameLink.className = 'block py-2 px-4 theme-name-container';
+                nameLink.title = name; // Show full name on hover tooltip
+                nameLink.addEventListener('click', (e) => { e.preventDefault(); saveAndApplyTheme(name); themeDropdown.classList.add('hidden'); });
+
+                // Inner span that holds the text and will be animated
+                const nameText = document.createElement('span');
+                nameText.textContent = name;
+                nameText.className = 'theme-name-text';
+
+                nameLink.appendChild(nameText);
     
                 const btnGroup = document.createElement('div');
-                btnGroup.className = 'pr-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity';
+                // Ensure the button group does not get squished
+                btnGroup.className = 'pr-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0';
                 
                 const btnClasses = 'text-xs px-1.5 py-0.5 rounded mx-0.5';
                 const editBtn = document.createElement('button');
@@ -221,7 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteBtn.onclick = (e) => { e.stopPropagation(); handleDeleteTheme(name, 'custom'); };
                 
                 btnGroup.append(editBtn, exportBtn, deleteBtn);
-                item.append(nameSpan, btnGroup);
+                // Replace the old 'nameSpan' with the new 'nameLink'
+                item.append(nameLink, btnGroup);
                 themeDropdown.appendChild(item);
             });
         }

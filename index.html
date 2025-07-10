@@ -64,6 +64,49 @@
         #scan-options-toggle.open h2::after {
             transform: rotate(180deg);
         }
+                .theme-name-container {
+            /* Set a max-width for the theme name to prevent layout breaking */
+            max-width: 120px;
+            display: block;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .theme-name-container .theme-name-text {
+            display: inline-block;
+            vertical-align: middle;
+            /* In its default state, long text will be truncated with an ellipsis */
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 100%;
+        }
+
+        /* When hovering over the entire row (.group) */
+        .group:hover .theme-name-container .theme-name-text {
+            text-overflow: clip; /* Remove the ellipsis */
+            max-width: none; /* Allow the text to break its container's boundary for animation */
+            animation: marquee-slide 5s ease-in-out infinite alternate;
+        }
+
+        @keyframes marquee-slide {
+            0% {
+                transform: translateX(0);
+            }
+            20% {
+                transform: translateX(0); /* Pause at the beginning */
+            }
+            80% {
+                /* Slide the text to the left.
+                  min() is used to prevent sliding to the right if the text is not overflowing.
+                  The calculation (container_width - text_width) results in a negative value for overflowing text,
+                  and 0 for non-overflowing text, ensuring the animation only visually occurs for long names.
+                */
+                transform: translateX(min(0px, calc(120px - 100%)));
+            }
+            100% {
+                transform: translateX(min(0px, calc(120px - 100%))); /* Pause at the end */
+            }
+        }
     </style>
 </head>
 <body class="select-none">
