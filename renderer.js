@@ -9,6 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
             startUrlScan: "URL 분석", urlScanTitle: "URL 취약점 분석", urlScanInfoTitle: "주의사항", urlScanInfoCase1Title: "✅ 분석 가능한 경우", urlScanInfoCase1Desc: "HTML, CSS, JavaScript 파일들이 서버에 개별 파일로 배포된 정적 웹사이트. (예: 순수 HTML/CSS/JS, Jekyll, Hugo 기반 사이트)", urlScanInfoCase2Title: "⚠️ 부분적으로 분석 가능한 경우", urlScanInfoCase2Desc: "리액트(React), Vue 등 빌드 과정을 거치는 사이트. 이 경우 빌드된 최종 JavaScript 파일 하나만 분석됩니다. 원본 소스 코드를 분석하려면 '디렉토리 선택' 기능을 사용하세요.", urlScanInfoReasonTitle: "이유", urlScanInfoReasonDesc: "URL 분석은 실제 사용자가 브라우저로 보는 배포된 파일들만 접근할 수 있습니다. 개발용 소스코드(`src` 폴더 등)는 서버에 배포되지 않으므로 URL로 직접 접근하여 분석할 수 없습니다.", urlScanStep1: "1단계: 분석 환경 준비", urlScanSubStep1Title: "메타태그 삽입", urlScanSubStep1Desc: "분석할 사이트의 &lt;head&gt; 태그 안에 아래 메타 태그를 추가하세요.", urlScanSubStep2Title: "cojuscan.js 생성", urlScanSubStep2Desc: "사이트의 루트 경로에 아래와 같이 폴더와 파일을 생성하세요.", urlScanSubStep3Title: "파일 경로 추가 및 배포", urlScanSubStep3Desc: "생성한 cojuscan.js 파일에 분석할 모든 파일의 경로를 추가하세요. 아래 형식들을 지원합니다.", copied: "복사되었습니다!", urlScanStep2: "2단계: URL 입력 및 검사", urlScanStep2Desc: "사이트 배포가 완료되었다면, 분석할 URL을 입력하고 검사를 시작하세요. (예: https://example.com)", startScanAction: "검사 시작", verificationFailed: "소유권 확인 실패. 메타 태그가 정확히 삽입되었는지 확인하세요.", urlFetchFailed: "URL을 가져올 수 없습니다. 주소를 확인하거나 서버 상태를 점검하세요.", invalidUrl: "유효한 URL을 입력해주세요. (https://로 시작)", cojuscanJsNotFound: "`cojuscan/cojuscan.js` 파일을 찾을 수 없습니다. 파일이 정확한 위치에 있고, 서버에서 접근 가능한지 확인하세요.", verifiedUrlListTitle: "검증된 URL 목록", noVerifiedUrls: "검증된 URL이 없습니다.", rescan: "재검사", urlScanResourcesTitle: "URL 분석 리소스", noAnalyzedResources: "분석된 리소스가 없습니다.",
             // New Theme Translations
             editTheme: "Edit", exportTheme: "Export", importSharedTheme: "공유 테마 불러오기", sharedThemesTitle: "공유 테마", sharedThemeLimitError: "공유 테마는 최대 3개까지 추가할 수 있습니다.", themeImportError: "테마를 불러오는 데 실패했습니다. 파일이 손상되었거나 형식이 올바르지 않을 수 있습니다.", themeImportSuccess: "테마를 성공적으로 불러왔습니다!", themeNameReadonlyError: "수정 중인 테마의 이름은 변경할 수 없습니다.", themeEdit: "테마 수정", sharedThemeTooltip: "공유된 테마 (수정 불가)", saveChanges: "변경사항 저장",
+            // GitHub Translations (NEW)
+            selectGithub: "GitHub 저장소",
+            githubModalTitle: "GitHub Repository 선택",
+            githubStep1: "1단계: GitHub 연동",
+            githubStep1Desc: "Cojuscan이 비공개 레포지토리를 포함한 당신의 레포지토리 목록을 불러올 수 있도록 GitHub 계정을 연동하세요.",
+            githubLogin: "GitHub 계정으로 연동",
+            githubLoggedIn: "연동된 계정:",
+            githubLogout: "연동 해제",
+            githubStep2: "2단계: 레포지토리 선택",
+            githubRepoSearch: "레포지토리 검색...",
+            githubStep3: "3단계: 브랜치 선택",
+            nextStep: "다음",
+            import: "가져오기",
+            authSuccess: "인증 성공!",
+            fetchingRepos: "레포지토리 목록을 가져오는 중...",
+            fetchingBranches: "브랜치 목록을 가져오는 중...",
+            downloadingRepo: "레포지토리 다운로드 중...",
+            githubAuthFailed: "GitHub 인증에 실패했습니다.",
+            
             themeVarGroups: {
                 "제목 표시줄": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "배경 & 테두리": ['--main-bg', '--secondary-bg', '--border-color'], "텍스트 & 링크": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "기본 버튼": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "검사 버튼": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL 검사 버튼": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL 모달": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI 컴포넌트": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "도움말 모달": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "상태 & 기타": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
             },
@@ -23,6 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
             startUrlScan: "URL Scan", urlScanTitle: "URL Vulnerability Scan", urlScanInfoTitle: "Please Note", urlScanInfoCase1Title: "✅ Fully Scannable Cases", urlScanInfoCase1Desc: "Static websites where HTML, CSS, and JavaScript files are deployed individually. (e.g., pure HTML/CSS/JS, Jekyll, or Hugo-based sites).", urlScanInfoCase2Title: "⚠️ Partially Scannable Cases", urlScanInfoCase2Desc: "Sites that go through a build process, like React or Vue. In this case, only the final bundled JavaScript file will be analyzed. To analyze the original source code, please use the 'Select Directory' feature.", urlScanInfoReasonTitle: "The Reason", urlScanInfoReasonDesc: "URL scanning can only access files that are publicly deployed and visible to a user's browser. Development source code (like the `src` folder) is not deployed to the server and thus cannot be accessed directly via a URL.", urlScanStep1: "Step 1: Prepare for Analysis", urlScanSubStep1Title: "Insert Meta Tag", urlScanSubStep1Desc: "Add the meta tag below to your site's &lt;head&gt; tag.", urlScanSubStep2Title: "Create cojuscan.js", urlScanSubStep2Desc: "Create the folder and file in your site's root directory as shown below.", urlScanSubStep3Title: "Add File Paths & Deploy", urlScanSubStep3Desc: "In the created cojuscan.js file, add the paths of all files to be analyzed. The following formats are supported.", copied: "Copied!", urlScanStep2: "Step 2: Enter URL and Scan", urlScanStep2Desc: "Once the site is deployed, enter the URL to analyze and start the scan. (e.g., https://example.com)", startScanAction: "Start Scan", verificationFailed: "Ownership verification failed. Please ensure the meta tag is inserted correctly.", urlFetchFailed: "Could not fetch the URL. Check the address or server status.", invalidUrl: "Please enter a valid URL (starting with https://).", cojuscanJsNotFound: "Could not find `cojuscan/cojuscan.js`. Please ensure the file is in the correct location and accessible on the server.", verifiedUrlListTitle: "Verified URL List", noVerifiedUrls: "No verified URLs.", rescan: "Re-scan", urlScanResourcesTitle: "URL Scan Resources", noAnalyzedResources: "No resources analyzed.",
             // New Theme Translations
             editTheme: "Edit", exportTheme: "Export", importSharedTheme: "Import Shared Theme", sharedThemesTitle: "Shared Themes", sharedThemeLimitError: "You can add up to 3 shared themes.", themeImportError: "Failed to import theme. The file may be corrupt or in the wrong format.", themeImportSuccess: "Theme imported successfully!", themeNameReadonlyError: "The name of a theme being edited cannot be changed.", themeEdit: "Edit Theme", sharedThemeTooltip: "Shared theme (not editable)", saveChanges: "Save Changes",
+            // GitHub Translations (NEW)
+            selectGithub: "GitHub Repository",
+            githubModalTitle: "Select GitHub Repository",
+            githubStep1: "Step 1: Connect to GitHub",
+            githubStep1Desc: "Connect your GitHub account to allow Cojuscan to fetch your list of repositories, including private ones.",
+            githubLogin: "Connect with GitHub",
+            githubLoggedIn: "Connected as:",
+            githubLogout: "Disconnect",
+            githubStep2: "Step 2: Select Repository",
+            githubRepoSearch: "Search repositories...",
+            githubStep3: "Step 3: Select Branch",
+            nextStep: "Next",
+            import: "Import",
+            authSuccess: "Authentication successful!",
+            fetchingRepos: "Fetching repositories...",
+            fetchingBranches: "Fetching branches...",
+            downloadingRepo: "Downloading repository...",
+            githubAuthFailed: "GitHub authentication failed.",
             themeVarGroups: {
                 "Title Bar": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "Background & Borders": ['--main-bg', '--secondary-bg', '--border-color'], "Text & Links": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "Standard Buttons": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "Scan Buttons": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL Scan Buttons": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL Modal": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI Components": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "Help Modal": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "State & Misc": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
             },
@@ -88,6 +125,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlScanInfoBtn = getEl('url-scan-info-btn');
     const urlScanInfoPanel = getEl('url-scan-info-panel');
     const urlScanMainContent = getEl('url-scan-main-content');
+
+    // --- GitHub Scan Elements (NEW) ---
+    const selectGithubBtn = getEl('select-github-btn');
+    const githubModal = getEl('github-modal');
+    const closeGithubModalBtn = getEl('close-github-modal-btn');
+    const githubStep1 = getEl('github-step-1');
+    const githubStep2 = getEl('github-step-2');
+    const githubStep3 = getEl('github-step-3');
+    const githubLoginBtn = getEl('github-login-btn');
+    const githubUserInfo = getEl('github-user-info');
+    const githubUsername = getEl('github-username');
+    const githubLogoutBtn = getEl('github-logout-btn');
+    const githubRepoSearch = getEl('github-repo-search');
+    const githubRepoList = getEl('github-repo-list');
+    const githubBranchList = getEl('github-branch-list');
+    const githubModalFooter = getEl('github-modal-footer');
+    const githubLoading = getEl('github-loading');
+    const githubLoadingText = getEl('github-loading-text');
+    const githubActionButtons = getEl('github-action-buttons');
+    const githubNextStepBtn = getEl('github-next-step-btn');
+    const githubImportBtn = getEl('github-import-btn');
     
     // --- Theme Elements ---
     const themeBtn = getEl('theme-btn');
@@ -116,6 +174,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFileTree = null;
     let newUrlVerificationToken = '';
     let verifiedUrls = [];
+
+    // --- GitHub State (NEW) ---
+    let githubCurrentStep = 1;
+    let githubUser = null;
+    let githubRepos = [];
+    let selectedRepo = null;
+    let selectedBranch = null;
 
     // =================================================================
     // THEME MANAGEMENT
@@ -945,6 +1010,202 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     urlScanStartBtn.addEventListener('click', handleUrlScan);
+    
+    // --- GITHUB MODAL LOGIC (NEW) ---
+    const resetGitHubModal = () => {
+        githubCurrentStep = 1;
+        selectedRepo = null;
+        selectedBranch = null;
+
+        githubStep1.classList.remove('hidden');
+        githubStep2.classList.add('hidden');
+        githubStep3.classList.add('hidden');
+
+        githubRepoList.innerHTML = '';
+        githubBranchList.innerHTML = '';
+        githubRepoSearch.value = '';
+
+        githubNextStepBtn.classList.remove('hidden');
+        githubImportBtn.classList.add('hidden');
+        githubNextStepBtn.disabled = !githubUser;
+        githubImportBtn.disabled = true;
+
+        githubLoading.classList.add('hidden');
+        githubActionButtons.classList.remove('hidden');
+    };
+
+    const updateGitHubUserState = async () => {
+        setGitHubLoading(true, '계정 정보 확인 중...');
+        try {
+            githubUser = await window.electronAPI.getGitHubUser();
+            if (githubUser) {
+                githubUsername.textContent = githubUser.login;
+                githubLoginBtn.classList.add('hidden');
+                githubUserInfo.classList.remove('hidden');
+                githubNextStepBtn.disabled = false;
+            } else {
+                githubLoginBtn.classList.remove('hidden');
+                githubUserInfo.classList.add('hidden');
+                githubNextStepBtn.disabled = true;
+            }
+        } finally {
+            setGitHubLoading(false);
+        }
+    };
+
+    const setGitHubLoading = (isLoading, text = '') => {
+        if (isLoading) {
+            githubLoadingText.textContent = text;
+            githubLoading.classList.remove('hidden');
+            githubActionButtons.classList.add('hidden');
+        } else {
+            githubLoading.classList.add('hidden');
+            githubActionButtons.classList.remove('hidden');
+        }
+    };
+
+    selectGithubBtn.addEventListener('click', async () => {
+        if (isThemeEditMode) return;
+        resetGitHubModal();
+        githubModal.classList.remove('hidden');
+        await updateGitHubUserState();
+    });
+
+    closeGithubModalBtn.addEventListener('click', () => {
+        githubModal.classList.add('hidden');
+    });
+    githubModal.addEventListener('click', (e) => {
+        if (e.target === githubModal) githubModal.classList.add('hidden');
+    });
+
+    githubLoginBtn.addEventListener('click', async () => {
+        setGitHubLoading(true, 'GitHub 인증을 기다리는 중...');
+        try {
+            await window.electronAPI.startGitHubAuth();
+            await updateGitHubUserState();
+        } catch (error) {
+            console.error(error);
+            alert(translations[currentLang].githubAuthFailed);
+            setGitHubLoading(false);
+        }
+    });
+
+    githubLogoutBtn.addEventListener('click', async () => {
+        await window.electronAPI.logoutGitHub();
+        githubUser = null;
+        await updateGitHubUserState();
+    });
+
+    githubNextStepBtn.addEventListener('click', async () => {
+        if (githubCurrentStep === 1) {
+            setGitHubLoading(true, translations[currentLang].fetchingRepos);
+            try {
+                githubRepos = await window.electronAPI.getGitHubRepos();
+                githubRepos.sort((a,b) => new Date(b.pushed_at) - new Date(a.pushed_at));
+                populateRepoList(githubRepos);
+                githubStep1.classList.add('hidden');
+                githubStep2.classList.remove('hidden');
+                githubCurrentStep = 2;
+                githubNextStepBtn.disabled = true;
+            } finally {
+                setGitHubLoading(false);
+            }
+        } else if (githubCurrentStep === 2) {
+            setGitHubLoading(true, translations[currentLang].fetchingBranches);
+            try {
+                const branches = await window.electronAPI.getGitHubBranches(selectedRepo.full_name);
+                populateBranchList(branches);
+                githubStep2.classList.add('hidden');
+                githubStep3.classList.remove('hidden');
+                githubCurrentStep = 3;
+                githubNextStepBtn.classList.add('hidden');
+                githubImportBtn.classList.remove('hidden');
+                githubImportBtn.disabled = true;
+            } finally {
+                setGitHubLoading(false);
+            }
+        }
+    });
+
+    githubImportBtn.addEventListener('click', async () => {
+        setGitHubLoading(true, translations[currentLang].downloadingRepo);
+        if (progressUnsubscribe) progressUnsubscribe();
+        progressUnsubscribe = window.electronAPI.onScanProgress(({ progress, file }) => {
+            setGitHubLoading(true, `${file} (${Math.round(progress)}%)`);
+        });
+
+        try {
+            const data = await window.electronAPI.importGitHubRepo(selectedRepo, selectedBranch);
+            if (data && data.tree) {
+                // Use repo name for display, temp path for scanning
+                projectPath = data.path; 
+                currentScannedUrl = data.repoName; // Use for report title
+
+                currentFileTree = data.tree;
+                fileTreeContainer.innerHTML = '';
+                fileTreeContainer.appendChild(createTreeElement(currentFileTree));
+                updateScanButtonState();
+                resultsContainer.innerHTML = `<p class="text-[var(--text-color-dark)] text-center py-10" data-i18n="startScanToSeeResults">${translations[currentLang].startScanToSeeResults}</p>`;
+                currentScanResults = null;
+                currentFilteredScanResults = null;
+                exportPdfBtn.classList.add('hidden');
+                githubModal.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Failed to import repository.');
+        } finally {
+            if (progressUnsubscribe) {
+                progressUnsubscribe();
+                progressUnsubscribe = null;
+            }
+            setGitHubLoading(false);
+        }
+    });
+    
+    const populateRepoList = (repos) => {
+        githubRepoList.innerHTML = '';
+        repos.forEach(repo => {
+            const item = document.createElement('div');
+            item.className = 'p-2 rounded-md cursor-pointer hover:bg-[var(--button-secondary-hover-bg)] flex justify-between items-center';
+            item.innerHTML = `
+                <div>
+                    <p class="font-semibold">${repo.name}</p>
+                    <p class="text-xs text-[var(--text-color-dark)]">${repo.full_name}</p>
+                </div>
+                ${repo.private ? `<span class="text-xs bg-red-800 text-white px-2 py-0.5 rounded-full">Private</span>` : ''}
+            `;
+            item.addEventListener('click', () => {
+                selectedRepo = repo;
+                githubRepoList.querySelectorAll('.bg-blue-600').forEach(el => el.classList.remove('bg-blue-600'));
+                item.classList.add('bg-blue-600');
+                githubNextStepBtn.disabled = false;
+            });
+            githubRepoList.appendChild(item);
+        });
+    };
+    
+    githubRepoSearch.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase();
+        const filteredRepos = githubRepos.filter(repo => repo.full_name.toLowerCase().includes(term));
+        populateRepoList(filteredRepos);
+    });
+
+    const populateBranchList = (branches) => {
+        githubBranchList.innerHTML = '';
+        branches.forEach(branch => {
+            const item = document.createElement('div');
+            item.className = 'p-2 rounded-md cursor-pointer hover:bg-[var(--button-secondary-hover-bg)]';
+            item.textContent = branch.name;
+            item.addEventListener('click', () => {
+                selectedBranch = branch;
+                githubBranchList.querySelectorAll('.bg-blue-600').forEach(el => el.classList.remove('bg-blue-600'));
+                item.classList.add('bg-blue-600');
+                githubImportBtn.disabled = false;
+            });
+            githubBranchList.appendChild(item);
+        });
+    };
 
     // --- Core App Logic ---
     const restoreUIState = () => {
@@ -1149,6 +1410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startPrecisionScanBtn.disabled = true;
         startUrlScanBtn.disabled = true;
         selectDirBtn.disabled = true;
+        selectGithubBtn.disabled = true; // Disable GitHub button during scan
         fileTreeContainer.style.pointerEvents = 'none';
 
         resultsContainer.innerHTML = `<p class="text-[var(--text-color-dark)] text-center py-10 animate-pulse">${translations[currentLang].scanInProgress}</p>`;
@@ -1162,7 +1424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         try {
-            currentScannedUrl = ''; 
+            // Do not clear currentScannedUrl here for GitHub scans
             const results = await window.electronAPI.startScan(scanType, { projectPath, filesToScan: checkedFiles });
             currentScanResults = results;
             displayResults(results);
@@ -1185,6 +1447,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } finally {
             selectDirBtn.disabled = false;
+            selectGithubBtn.disabled = false; // Re-enable GitHub button
             fileTreeContainer.style.pointerEvents = 'auto';
             updateScanButtonState();
             progressText.textContent = translations[currentLang].scanComplete;

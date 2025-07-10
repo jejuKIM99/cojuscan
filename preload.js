@@ -28,6 +28,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('url-scan:progress', listener);
   },
 
+  // --- GitHub Functionality (NEW) ---
+  startGitHubAuth: () => ipcRenderer.invoke('github:auth:start'),
+  getGitHubUser: () => ipcRenderer.invoke('github:user:get'),
+  logoutGitHub: () => ipcRenderer.invoke('github:auth:logout'),
+  getGitHubRepos: () => ipcRenderer.invoke('github:repos:get'),
+  getGitHubBranches: (repo) => ipcRenderer.invoke('github:branches:get', repo),
+  importGitHubRepo: (repo, branch) => ipcRenderer.invoke('github:repo:import', { repo, branch }),
+
   // --- App Info ---
   getAppInfo: () => ipcRenderer.invoke('get-app-info'),
 

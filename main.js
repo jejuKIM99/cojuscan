@@ -1,6 +1,6 @@
 // main.js
-const { app, BrowserWindow, ipcMain, dialog, net } = require('electron');
-const path = require('path');
+const { app, BrowserWindow, ipcMain, dialog, net, shell } = require('electron');
+const path =require('path');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
@@ -8,14 +8,46 @@ const { spawn } = require('child_process');
 const { URL } = require('url');
 const Store = require('electron-store');
 const { scanContent, vulnerabilityPatterns } = require('./scanner.js');
+const os = require('os');
+const crypto = require('crypto');
+
+const gotTheLock = app.requestSingleInstanceLock();
+let mainWindow;
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+    const url = commandLine.pop();
+    if (url && url.startsWith('cojuscan://')) {
+        app.emit('open-url', event, url);
+    }
+  });
+}
 
 const store = new Store();
-// console.log('>>> 설정 파일 경로(config.json path):', store.path);
+
+// 이 Client ID는 프록시 서버의 환경 변수에 설정되므로, 여기서도 일치시켜주는 것이 좋습니다.
+process.env.GITHUB_CLIENT_ID = 'Ov23lioAXZ3X5DQKfu2i';
+const GITHUB_REDIRECT_URI = 'cojuscan://auth/callback';
+
 const IS_WINDOWS = process.platform === 'win32';
 const isPackaged = app.isPackaged;
 const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
 const LOCAL_PYTHON_DIR = path.join(RESOURCES_PATH, '.py-semgrep');
 const LOCAL_SEMGREP_EXE = path.join(LOCAL_PYTHON_DIR, 'Scripts', 'semgrep.exe');
+
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('cojuscan', process.execPath, [path.resolve(process.argv[1])]);
+    }
+} else {
+    app.setAsDefaultProtocolClient('cojuscan');
+}
 
 const codeExtensions = new Set([
     '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.vue', '.svelte', '.py', '.pyw',
@@ -82,7 +114,7 @@ function loadIconsAsDataUris() {
 }
 
 const createWindow = () => {
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1400,
         height: 900,
         minWidth: 940,
@@ -110,6 +142,206 @@ const createWindow = () => {
     mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximized'));
     mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-unmaximized'));
 
+    let githubAccessToken = null;
+    
+    // =================================================================
+    // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 시작 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+    // =================================================================
+    let isAuthInProgress = false; // 인증 진행 상태를 추적하는 잠금 변수
+
+    function base64URLEncode(str) {
+        return str.toString('base64')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=/g, '');
+    }
+    function sha256(buffer) {
+        return crypto.createHash('sha256').update(buffer).digest();
+    }
+
+    ipcMain.handle('github:auth:start', async () => {
+        // 이미 인증이 진행 중이면 새로 시작하지 않음
+        if (isAuthInProgress) {
+            console.log('An authentication process is already in progress.');
+            // 에러를 던져서 UI에서 알 수 있게 하거나, 조용히 무시할 수 있습니다.
+            throw new Error('인증이 이미 진행중입니다.');
+        }
+        isAuthInProgress = true; // 인증 시작, 잠금 설정
+
+        // 이 변수들은 이제 이 함수의 지역 변수가 되어 다른 호출에 의해 덮어써지지 않습니다.
+        const githubAuthState = base64URLEncode(crypto.randomBytes(16));
+        const rawVerifier = crypto.randomBytes(32);
+        const codeVerifier = base64URLEncode(rawVerifier);
+        const challengeBuffer = sha256(rawVerifier);
+        const codeChallenge = base64URLEncode(challengeBuffer);
+        
+        const authUrl = new URL('https://github.com/login/oauth/authorize');
+        authUrl.searchParams.append('client_id', process.env.GITHUB_CLIENT_ID);
+        authUrl.searchParams.append('redirect_uri', GITHUB_REDIRECT_URI);
+        authUrl.searchParams.append('scope', 'repo,user');
+        authUrl.searchParams.append('state', githubAuthState);
+        authUrl.searchParams.append('code_challenge', codeChallenge);
+        authUrl.searchParams.append('code_challenge_method', 'S256');
+
+        await shell.openExternal(authUrl.toString());
+
+        return new Promise((resolve, reject) => {
+            const handleAuthCallback = async (event, url) => {
+                // 이 콜백 핸들러는 한 번만 실행되어야 합니다.
+                app.removeListener('open-url', handleAuthCallback);
+                
+                const raw_code = /code=([^&]*)/.exec(url) || null;
+                const code = (raw_code && raw_code.length > 1) ? raw_code[1] : null;
+                const returnedState = /state=([^&]*)/.exec(url) || null;
+                const state = (returnedState && returnedState.length > 1) ? returnedState[1] : null;
+
+                if (code && state === githubAuthState) {
+                    try {
+                        const proxyUrl = 'https://cojuscanproxy.vercel.app/api/auth';
+                        const tokenResponse = await net.fetch(proxyUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ code, code_verifier: codeVerifier }),
+                        });
+                        const tokenData = await tokenResponse.json();
+                        githubAccessToken = tokenData.access_token;
+
+                        if (githubAccessToken) {
+                           store.set('githubAccessToken', githubAccessToken);
+                           resolve({ success: true });
+                        } else {
+                           reject(new Error(tokenData.error || 'Failed to get access token from proxy.'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    } finally {
+                        isAuthInProgress = false; // 인증 종료, 잠금 해제
+                    }
+                } else {
+                    reject(new Error('GitHub auth state mismatch or no code found.'));
+                    isAuthInProgress = false; // 인증 실패, 잠금 해제
+                }
+            };
+
+            // 이 리스너는 현재 인증 흐름에 대해서만 동작합니다.
+            app.on('open-url', handleAuthCallback);
+
+            setTimeout(() => {
+                app.removeListener('open-url', handleAuthCallback);
+                if (isAuthInProgress) { // 아직도 인증이 진행 중이라면 타임아웃 처리
+                    reject(new Error('GitHub authentication timed out.'));
+                    isAuthInProgress = false; // 타임아웃, 잠금 해제
+                }
+            }, 300000); // 5분 타임아웃
+        });
+    });
+    // =================================================================
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 수정된 부분 끝 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+    // =================================================================
+    
+    ipcMain.handle('github:user:get', async () => {
+        if (!githubAccessToken) {
+            githubAccessToken = store.get('githubAccessToken');
+            if(!githubAccessToken) return null;
+        }
+        try {
+            const response = await net.fetch('https://api.github.com/user', {
+                headers: { 'Authorization': `token ${githubAccessToken}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (!response.ok) throw new Error(`GitHub API Error: ${response.statusText}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Failed to fetch GitHub user:', error);
+            githubAccessToken = null;
+            store.delete('githubAccessToken');
+            return null;
+        }
+    });
+
+    ipcMain.handle('github:auth:logout', async () => {
+        githubAccessToken = null;
+        store.delete('githubAccessToken');
+        return { success: true };
+    });
+
+    ipcMain.handle('github:repos:get', async () => {
+         if (!githubAccessToken) return [];
+         try {
+            let allRepos = [];
+            let page = 1;
+            while(true) {
+                const response = await net.fetch(`https://api.github.com/user/repos?per_page=100&page=${page}`, {
+                     headers: { 'Authorization': `token ${githubAccessToken}` }
+                });
+                if (!response.ok) throw new Error(`GitHub API Error: ${response.statusText}`);
+                const repos = await response.json();
+                if (repos.length === 0) break;
+                allRepos = allRepos.concat(repos);
+                page++;
+            }
+            return allRepos;
+        } catch(e) {
+            console.error(e); return [];
+        }
+    });
+    
+    ipcMain.handle('github:branches:get', async (event, repoFullName) => {
+        if (!githubAccessToken) return [];
+        try {
+            const response = await net.fetch(`https://api.github.com/repos/${repoFullName}/branches`, {
+                headers: { 'Authorization': `token ${githubAccessToken}` }
+            });
+            if (!response.ok) throw new Error(`GitHub API Error: ${response.statusText}`);
+            return await response.json();
+        } catch(e) {
+            console.error(e); return [];
+        }
+    });
+
+    ipcMain.handle('github:repo:import', async (event, { repo, branch }) => {
+        if (!githubAccessToken) return null;
+        const currentWindow = BrowserWindow.fromWebContents(event.sender);
+    
+        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cojuscan-'));
+        
+        try {
+            currentWindow.webContents.send('scan:progress', { progress: 10, file: '브랜치 정보 확인 중...' });
+            const branchResponse = await net.fetch(`https://api.github.com/repos/${repo.full_name}/branches/${branch.name}`, { headers: { 'Authorization': `token ${githubAccessToken}` } });
+            if (!branchResponse.ok) throw new Error('Could not fetch branch info.');
+            const branchData = await branchResponse.json();
+            const treeSha = branchData.commit.commit.tree.sha;
+    
+            currentWindow.webContents.send('scan:progress', { progress: 25, file: '파일 목록 가져오는 중...' });
+            const treeResponse = await net.fetch(`https://api.github.com/repos/${repo.full_name}/git/trees/${treeSha}?recursive=1`, { headers: { 'Authorization': `token ${githubAccessToken}` } });
+            if (!treeResponse.ok) throw new Error('Could not fetch file tree.');
+            const treeData = await treeResponse.json();
+    
+            const filesToDownload = treeData.tree.filter(item => item.type === 'blob');
+            const totalFiles = filesToDownload.length;
+    
+            for (let i = 0; i < totalFiles; i++) {
+                const file = filesToDownload[i];
+                const progress = 40 + Math.round((i / totalFiles) * 60);
+                currentWindow.webContents.send('scan:progress', { progress, file: `다운로드 중: ${file.path}` });
+    
+                const fileResponse = await net.fetch(file.url, { headers: { 'Authorization': `token ${githubAccessToken}` } });
+                if (!fileResponse.ok) continue;
+                const blobData = await fileResponse.json();
+    
+                const content = Buffer.from(blobData.content, blobData.encoding);
+                const filePath = path.join(tempDir, file.path);
+                fs.mkdirSync(path.dirname(filePath), { recursive: true });
+                fs.writeFileSync(filePath, content);
+            }
+
+            return { path: tempDir, tree: readDirectoryStructure(tempDir), repoName: repo.full_name };
+        } catch (error) {
+            console.error('GitHub repo import failed:', error);
+            fs.rmSync(tempDir, { recursive: true, force: true });
+            throw error;
+        }
+    });
+
     ipcMain.handle('scan:start', async (event, scanType, { projectPath, filesToScan }) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         
@@ -131,17 +363,13 @@ const createWindow = () => {
         } 
         else if (scanType === 'precision') {
             if (filesToScan.length === 0) return {};
-
             const command = IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE) ? LOCAL_SEMGREP_EXE : 'semgrep';
-            
             const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
 
             return new Promise((resolve, reject) => {
                 const fullFilePaths = filesToScan.map(f => path.join(projectPath, f));
                 const args = ['scan', '--json', '--config=auto', ...fullFilePaths];
-
                 if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
-
                 const semgrep = spawn(command, args, { cwd: projectPath });
                 
                 semgrep.on('error', (err) => {
@@ -153,12 +381,10 @@ const createWindow = () => {
 
                 let jsonData = '';
                 let errorData = '';
-
                 semgrep.stdout.on('data', (data) => { jsonData += data.toString(); });
                 semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
 
                 semgrep.on('close', (code) => {
-                    // MODIFICATION START: Enhanced error handling
                     if (code !== 0) { 
                         console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
                         const filteredError = errorData.split('\n').filter(line => 
@@ -170,15 +396,12 @@ const createWindow = () => {
                         let finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 종료되었습니다.`;
                         if (filteredError) {
                             finalErrorMessage = `스캔 실패. 상세: ${filteredError}`;
-                        } else if (code > 1) { // Exit code 1 can sometimes mean vulnerabilities found, but > 1 is usually a hard error.
+                        } else if (code > 1) {
                             finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 비정상 종료되었습니다. 로컬 Python 환경이 손상되었을 수 있습니다. 앱을 재설치하거나 수동으로 Semgrep을 설치해보세요.`;
                         }
-
-                        // If there's an error but we still got some JSON data, it might be partial.
-                        // We will prioritize the error message over potentially incomplete results.
+                        
                         return reject(new Error(finalErrorMessage));
                     }
-                    // MODIFICATION END
 
                     if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
                     try {
@@ -239,7 +462,6 @@ const createWindow = () => {
         }
     });
     
-    // URL Scan Handler based on cojuscan.js
     ipcMain.handle('url:scan', async (event, { url, verificationToken }) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         const sendProgress = (progress, text) => {
@@ -247,11 +469,9 @@ const createWindow = () => {
                 currentWindow.webContents.send('url-scan:progress', { progress, text });
             }
         };
-
         const hiddenWin = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false, contextIsolation: false } });
 
         try {
-            // 1. Verify ownership
             sendProgress(10, `소유권 확인을 위해 페이지 로드 중...`);
             await hiddenWin.loadURL(url);
             const htmlContent = await hiddenWin.webContents.executeJavaScript('document.documentElement.outerHTML');
@@ -261,7 +481,6 @@ const createWindow = () => {
                 throw new Error('VERIFICATION_FAILED');
             }
 
-            // 2. Find and fetch cojuscan.js
             sendProgress(30, `cojuscan.js 파일 탐색 중...`);
             const mainUrl = new URL(url);
             const cojuscanUrl = new URL('/cojuscan/cojuscan.js', mainUrl.origin).href;
@@ -278,7 +497,6 @@ const createWindow = () => {
                 request.end();
             });
 
-            // 3. Parse imports from cojuscan.js (MODIFIED)
             sendProgress(50, `분석 대상 파일 목록 파싱 중...`);
             const comprehensiveImportRegex = /import(?:[\s\S]*?from)?\s*['"](.[^'"]+)['"]/g;
 
@@ -295,7 +513,6 @@ const createWindow = () => {
                  return {};
             }
 
-            // 4. Fetch and scan each file
             const results = {};
             const totalFiles = fileList.length;
 
@@ -336,10 +553,8 @@ const createWindow = () => {
                     });
                 }
             }
-            
             sendProgress(100, '분석 완료!');
             return results;
-
         } catch (error) {
             console.error('URL 스캔 오류:', error);
             throw error;
@@ -350,25 +565,20 @@ const createWindow = () => {
         }
     });
 
-    // --- NEW: Theme Import/Export Handlers ---
     ipcMain.handle('theme:export', async (event, themeData) => {
         const { name, theme } = themeData;
         if (!name || !theme) {
             return { success: false, message: '잘못된 테마 데이터입니다.' };
         }
-    
         const { canceled, filePath } = await dialog.showSaveDialog({
             title: '테마 내보내기',
             defaultPath: `Cojuscan-Theme-${name}.json`,
             filters: [{ name: 'JSON 파일', extensions: ['json'] }]
         });
-    
         if (canceled || !filePath) {
             return { success: false, message: '내보내기를 취소했습니다.' };
         }
-    
         try {
-            // isShared: true 플래그를 추가하여 불러올 때 공유 테마임을 명시
             fs.writeFileSync(filePath, JSON.stringify({ name, theme, isShared: true }, null, 2));
             return { success: true };
         } catch (error) {
@@ -383,31 +593,22 @@ const createWindow = () => {
             properties: ['openFile'],
             filters: [{ name: 'JSON 파일', extensions: ['json'] }]
         });
-    
         if (canceled || filePaths.length === 0) {
             return null;
         }
-    
         try {
             const fileContent = fs.readFileSync(filePaths[0], 'utf-8');
             const themeData = JSON.parse(fileContent);
-    
-            // 기본적인 파일 형식 검증
             if (typeof themeData.name !== 'string' || typeof themeData.theme !== 'object' || themeData.name.trim() === '') {
                 throw new Error('잘못된 테마 파일 형식입니다.');
             }
-            
-            // 불러온 테마는 항상 공유 테마로 처리
             themeData.isShared = true;
             return themeData;
         } catch (error) {
             console.error('테마 불러오기 실패:', error);
-            // 렌더러에서 null을 받아 오류를 처리하도록 함
             return null;
         }
     });
-    // --- END NEW ---
-
 
     ipcMain.handle('dialog:openDirectory', async () => {
         const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] });
@@ -454,7 +655,6 @@ const createWindow = () => {
                 nodeIntegration: false,
             }
         });
-
         ipcMain.once('report-ready-for-pdf', async () => {
             try {
                 const { canceled, filePath } = await dialog.showSaveDialog({
@@ -494,29 +694,26 @@ const createWindow = () => {
 
     mainWindow.loadFile('index.html');
 };
+
 let isQuitting = false;
 
 app.on('before-quit', (event) => {
     if (isQuitting) {
         return;
     }
-    event.preventDefault(); // 기본 종료 동작을 막습니다.
-
+    event.preventDefault();
     console.log('종료 신호 감지. 렌더러 상태 저장을 시작합니다.');
     const mainWindow = BrowserWindow.getAllWindows()[0];
 
-    // 1. 렌더러에 현재 상태를 요청합니다.
     if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('get-renderer-state');
     }
 
-    // 2. 렌더러로부터 상태를 받으면 저장하고 앱을 종료합니다.
     ipcMain.once('renderer-state-for-quit', (e, state) => {
         console.log('렌더러로부터 받은 상태:', Object.keys(state));
         try {
-            // 받은 상태 객체의 모든 키와 값을 store에 저장합니다.
             for (const [key, value] of Object.entries(state)) {
-                if (value !== undefined) { // undefined 값은 저장하지 않습니다.
+                if (value !== undefined) {
                     store.set(key, value);
                 }
             }
@@ -525,11 +722,10 @@ app.on('before-quit', (event) => {
             console.error('종료 전 상태 저장 실패:', error);
         } finally {
             isQuitting = true;
-            app.quit(); // 모든 저장이 완료된 후 실제 앱을 종료합니다.
+            app.quit();
         }
     });
 
-    // 5초 타임아웃: 렌더러가 응답하지 않을 경우 강제 종료
     setTimeout(() => {
         if (!isQuitting) {
             console.log('렌더러 응답 시간 초과. 강제 종료합니다.');
