@@ -402,10 +402,24 @@ const createWindow = () => {
                         return reject(new Error(finalErrorMessage));
                     }
 
+                    // ▼▼▼▼▼ 핵심 수정 부분 시작 ▼▼▼▼▼
+                    // stdout(jsonData)가 비어 있고, stderr(errorData)에 무시할 수 없는 내용이 있다면 오류로 간주합니다.
+                    const significantError = errorData.split('\n').filter(line => 
+                        !line.includes('UserWarning: pkg_resources is deprecated') &&
+                        !line.includes('(ca-certs): Ignored 1 trust anchors') &&
+                        line.trim() !== ''
+                    ).join('\n').trim();
+
+                    if (jsonData.trim() === '' && significantError) {
+                        console.error(`Semgrep 스캔은 종료되었으나 결과가 없으며, 오류가 감지되었습니다: ${significantError}`);
+                        return reject(new Error(`스캔 엔진 오류가 발생했습니다: ${significantError}`));
+                    }
+                    // ▲▲▲▲▲ 핵심 수정 부분 끝 ▲▲▲▲▲
+
                     if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
                     try {
                         if (jsonData.trim() === '') {
-                             // 종료 코드가 0 또는 1 이지만 JSON 출력이 없는 경우, 발견된 취약점이 없는 것으로 간주하고 빈 객체를 반환합니다.
+                             // 이제 이 경우는 정말로 취약점이 없는 '깨끗한' 상태로 확신할 수 있습니다.
                             return resolve({});
                         }
                         const parsedOutput = JSON.parse(jsonData);
