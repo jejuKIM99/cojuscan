@@ -316,7 +316,12 @@ const createWindow = () => {
             if (!treeResponse.ok) throw new Error('Could not fetch file tree.');
             const treeData = await treeResponse.json();
     
-            const filesToDownload = treeData.tree.filter(item => item.type === 'blob');
+            const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico']);
+            const filesToDownload = treeData.tree.filter(item => {
+                if (item.type !== 'blob') return false;
+                const extension = path.extname(item.path).toLowerCase();
+                return !imageExtensions.has(extension);
+            });
             const totalFiles = filesToDownload.length;
     
             for (let i = 0; i < totalFiles; i++) {
