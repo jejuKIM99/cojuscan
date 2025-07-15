@@ -317,10 +317,12 @@ const createWindow = () => {
             const treeData = await treeResponse.json();
     
             const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico']);
+            const videoExtensions = new Set(['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm']);
             const filesToDownload = treeData.tree.filter(item => {
                 if (item.type !== 'blob') return false;
                 const extension = path.extname(item.path).toLowerCase();
-                return !imageExtensions.has(extension);
+                const excludedExtensions = new Set([...imageExtensions, ...videoExtensions]);
+                return !excludedExtensions.has(extension);
             });
             const totalFiles = filesToDownload.length;
     
@@ -643,7 +645,7 @@ const createWindow = () => {
             version: app.getVersion(),
             locale: app.getLocale(),
             extensions: Array.from(codeExtensions),
-            vulnerabilities: vulnerabilityPatterns.map(v => ({ 
+            vulnerabilities: vulnerabilityPatterns.map(v => ({
                 name: v.name, category: v.category, details: v.details,
                 name_en: v.name_en, details_en: v.details_en, category_en: v.category_en,
                 recommendation_ko: v.recommendation_ko, recommendation_en: v.recommendation_en
