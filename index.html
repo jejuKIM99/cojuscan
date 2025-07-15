@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://gxjznorcwnqajdotlmxv.supabase.co; connect-src 'self' https://gxjznorcwnqajdotlmxv.supabase.co;">
     <title>cojuscan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style id="dynamic-theme-styles">
@@ -116,6 +116,11 @@
             <span id="app-version" class="ml-2 text-xs font-mono text-[var(--title-bar-version-text-color)]"></span>
         </div>
         <div id="title-bar-btns" class="flex items-center h-full">
+            <div class="relative">
+                <button id="theme-store-btn" class="px-3 h-full hover:bg-[var(--title-bar-button-hover-bg)] transition-colors flex items-center text-[var(--title-bar-button-color)]" title="Theme Store">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>
+                </button>
+            </div>
             <div class="relative">
                 <button id="theme-btn" class="px-3 h-full hover:bg-[var(--title-bar-button-hover-bg)] transition-colors flex items-center text-[var(--title-bar-button-color)]" title="Change Theme">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
@@ -409,6 +414,101 @@
             <p id="theme-editor-message" class="text-yellow-400 text-xs h-4 absolute right-24"></p>
         </div>
         <div id="theme-editor-properties" class="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-2 overflow-y-auto" style="max-height: 200px;">
+        </div>
+    </div>
+
+    <!-- Theme Store Modal -->
+    <div id="theme-store-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-[var(--secondary-bg)] rounded-lg shadow-lg p-6 w-full max-w-4xl h-5/6 flex flex-col border-2 border-[var(--accent-color)]">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <h2 class="text-2xl font-bold text-[var(--accent-color)]" data-i18n="themeStoreTitle">테마 스토어</h2>
+                <button id="close-theme-store-btn" class="text-2xl text-[var(--text-color-dark)] hover:text-white">&times;</button>
+            </div>
+            <div class="flex-shrink-0 border-b border-[var(--border-color)] mb-4">
+                <nav class="flex space-x-4">
+                    <button id="cojus-special-tab" class="py-2 px-4 text-lg font-semibold border-b-2 border-[var(--accent-color)] text-[var(--accent-color)]" data-i18n="cojusSpecial">Cojus-Special</button>
+                    <button id="free-themes-tab" class="py-2 px-4 text-lg font-semibold border-b-2 border-transparent text-[var(--text-color-dark)] hover:text-[var(--text-color)]" data-i18n="freeThemes">Free</button>
+                </nav>
+            </div>
+            <div id="theme-search-container" class="flex items-center mb-4 px-1 hidden">
+                <div class="relative mr-2">
+                    <select id="theme-search-type" class="appearance-none w-28 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-color)] py-2 pl-3 pr-8 rounded-md leading-tight focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]">
+                        <option value="title" data-i18n="title">제목</option>
+                        <option value="nickname" data-i18n="nickname">닉네임</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-color-dark)]">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+                <input type="text" id="theme-search-input" class="flex-grow p-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]" data-i18n-placeholder="searchPlaceholder">
+                <button id="theme-search-btn" class="ml-2 p-2 bg-[var(--button-secondary-bg)] hover:bg-[var(--button-secondary-hover-bg)] rounded-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--text-color)]"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+            </div>
+            <div id="theme-store-content" class="flex-grow overflow-y-auto pr-2">
+                <!-- 테마 목록이 여기에 동적으로 채워집니다. -->
+            </div>
+            <div id="theme-store-footer" class="flex-shrink-0 mt-4 pt-4 border-t border-[var(--border-color)] flex justify-end">
+                <button id="upload-theme-btn" class="hidden bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-hover-bg)] text-white font-bold py-2 px-4 rounded-lg transition duration-200" data-i18n="uploadTheme">테마 업로드</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Upload Modal -->
+    <div id="theme-upload-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+        <div class="bg-[var(--secondary-bg)] rounded-lg shadow-lg p-6 w-full max-w-md flex flex-col border-2 border-[var(--accent-color)]">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="themeUploadTitle" class="text-2xl font-bold text-[var(--accent-color)]" data-i18n="themeUploadTitle">테마 업로드</h2>
+                <button id="close-theme-upload-btn" class="text-2xl text-[var(--text-color-dark)] hover:text-white">&times;</button>
+            </div>
+            <form id="theme-upload-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-color-dark)]" data-i18n="themeName">테마 이름</label>
+                    <input type="text" id="upload-theme-name" required class="mt-1 block w-full p-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-color-dark)]" data-i18n="nickname">닉네임</label>
+                    <input type="text" id="upload-nickname" required class="mt-1 block w-full p-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-color-dark)]" data-i18n="password">비밀번호</label>
+                    <input type="password" id="upload-password" required class="mt-1 block w-full p-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-color-dark)]" data-i18n="previewImage">대표 이미지 (JPG, JPEG, WEBP)</label>
+                    <input type="file" id="upload-image-file" required accept=".jpg,.jpeg,.webp" class="mt-1 block w-full text-sm text-[var(--text-color-dark)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--button-secondary-bg)] file:text-[var(--text-color)] hover:file:bg-[var(--button-secondary-hover-bg)]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-color-dark)]" data-i18n="themeFile">테마 파일 (*.json)</label>
+                    <input type="file" id="upload-json-file" required accept=".json" class="mt-1 block w-full text-sm text-[var(--text-color-dark)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--button-secondary-bg)] file:text-[var(--text-color)] hover:file:bg-[var(--button-secondary-hover-bg)]">
+                </div>
+                <div id="upload-error-message" class="text-red-400 text-center text-sm h-4"></div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" id="cancel-upload-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg" data-i18n="cancel">취소</button>
+                    <button type="submit" id="submit-upload-btn" class="bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-hover-bg)] text-white font-bold py-2 px-4 rounded-lg" data-i18n="submit">제출</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Confirmation Modal -->
+    <div id="password-confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+        <div class="bg-[var(--secondary-bg)] rounded-lg shadow-lg p-6 w-full max-w-sm flex flex-col border-2 border-[var(--accent-color)]">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-[var(--accent-color)]" data-i18n="passwordConfirmTitle">비밀번호 확인</h2>
+                <button id="close-password-confirm-modal-btn" class="text-2xl text-[var(--text-color-dark)] hover:text-white">&times;</button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-[var(--text-color-dark)]" data-i18n="password">비밀번호</label>
+                    <input type="password" id="password-confirm-input" required class="mt-1 block w-full p-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]">
+                </div>
+                <div id="password-confirm-error-message" class="text-red-400 text-center text-sm h-4"></div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" id="password-confirm-cancel-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg" data-i18n="cancel">취소</button>
+                    <button type="button" id="password-confirm-submit-btn" class="bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-hover-bg)] text-white font-bold py-2 px-4 rounded-lg" data-i18n="confirm">확인</button>
+                </div>
+            </div>
         </div>
     </div>
 

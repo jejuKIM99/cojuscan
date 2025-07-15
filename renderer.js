@@ -27,7 +27,33 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchingBranches: "브랜치 목록을 가져오는 중...",
             downloadingRepo: "레포지토리 다운로드 중...",
             githubAuthFailed: "GitHub 인증에 실패했습니다.",
-            
+
+            // Theme Store
+            themeStoreTitle: "테마 스토어",
+            cojusSpecial: "Cojus-Special",
+            freeThemes: "Free",
+            uploadTheme: "테마 업로드",
+            themeUploadTitle: "테마 업로드",
+            themeName: "테마 이름",
+            nickname: "닉네임",
+            password: "비밀번호",
+            previewImage: "대표 이미지 (JPG, JPEG, WEBP)",
+            themeFile: "테마 파일 (*.json)",
+            cancel: "취소",
+            submit: "제출",
+            uploadSuccess: "테마가 성공적으로 업로드되었습니다!",
+            uploadError: "업로드 실패:",
+            fetchingThemes: "테마 목록을 불러오는 중...",
+            noThemesFound: "테마가 없습니다.",
+            downloadAndApply: "다운로드 & 적용",
+            downloading: "다운로드 중...",
+            invalidFileType: "잘못된 파일 형식입니다.",
+            searchPlaceholder: "검색어를 입력하세요...",
+            title: "제목",
+            nickname: "닉네임",
+            passwordConfirmTitle: "비밀번호 확인",
+            confirm: "확인",
+
             themeVarGroups: {
                 "제목 표시줄": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "배경 & 테두리": ['--main-bg', '--secondary-bg', '--border-color'], "텍스트 & 링크": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "기본 버튼": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "검사 버튼": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL 검사 버튼": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL 모달": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI 컴포넌트": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "도움말 모달": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "상태 & 기타": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
             },
@@ -60,6 +86,28 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchingBranches: "Fetching branches...",
             downloadingRepo: "Downloading repository...",
             githubAuthFailed: "GitHub authentication failed.",
+
+            // Theme Store
+            themeStoreTitle: "Theme Store",
+            cojusSpecial: "Cojus-Special",
+            freeThemes: "Free",
+            uploadTheme: "Upload Theme",
+            themeUploadTitle: "Theme Upload",
+            themeName: "Theme Name",
+            nickname: "Nickname",
+            password: "Password",
+            previewImage: "Preview Image (JPG, JPEG, WEBP)",
+            themeFile: "Theme File (*.json)",
+            cancel: "Cancel",
+            submit: "Submit",
+            uploadSuccess: "Theme uploaded successfully!",
+            uploadError: "Upload failed:",
+            fetchingThemes: "Fetching themes...",
+            noThemesFound: "No themes found.",
+            downloadAndApply: "Download & Apply",
+            downloading: "Downloading...",
+            invalidFileType: "Invalid file type.",
+
             themeVarGroups: {
                 "Title Bar": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "Background & Borders": ['--main-bg', '--secondary-bg', '--border-color'], "Text & Links": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "Standard Buttons": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "Scan Buttons": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL Scan Buttons": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL Modal": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI Components": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "Help Modal": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "State & Misc": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
             },
@@ -162,6 +210,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpModalPreviewToggle = getEl('help-modal-preview-toggle');
     const urlModalPreviewToggle = getEl('url-modal-preview-toggle');
     const themeEditorTitleEl = getEl('theme-editor-title');
+
+    // --- Theme Store Elements ---
+    const themeStoreBtn = getEl('theme-store-btn');
+    const themeStoreModal = getEl('theme-store-modal');
+    const closeThemeStoreBtn = getEl('close-theme-store-btn');
+    const cojusSpecialTab = getEl('cojus-special-tab');
+    const freeThemesTab = getEl('free-themes-tab');
+    const themeStoreContent = getEl('theme-store-content');
+    const uploadThemeBtn = getEl('upload-theme-btn');
+    const themeUploadModal = getEl('theme-upload-modal');
+    const closeThemeUploadBtn = getEl('close-theme-upload-btn');
+    const themeUploadForm = getEl('theme-upload-form');
+    const cancelUploadBtn = getEl('cancel-upload-btn');
+    const uploadErrorMessage = getEl('upload-error-message');
+    const themeSearchContainer = getEl('theme-search-container');
+    const themeSearchType = getEl('theme-search-type');
+    const themeSearchInput = getEl('theme-search-input');
+    const themeSearchBtn = getEl('theme-search-btn');
+
+    // --- Password Confirmation Modal Elements ---
+    const passwordConfirmModal = getEl('password-confirm-modal');
+    const closePasswordConfirmModalBtn = getEl('close-password-confirm-modal-btn');
+    const passwordConfirmInput = getEl('password-confirm-input');
+    const passwordConfirmErrorMessage = getEl('password-confirm-error-message');
+    const passwordConfirmCancelBtn = getEl('password-confirm-cancel-btn');
+    const passwordConfirmSubmitBtn = getEl('password-confirm-submit-btn');
 
     let projectPath = '';
     let currentScannedUrl = ''; 
@@ -618,6 +692,358 @@ document.addEventListener('DOMContentLoaded', () => {
 
     closeThemeEditorBtn.addEventListener('click', () => exitThemeEditMode());
     saveThemeBtn.addEventListener('click', saveCustomTheme);
+
+    // =================================================================
+    // THEME STORE
+    // =================================================================
+    let activeThemeTab = 'cojustheme';
+
+    const switchThemeTab = (tab) => {
+        activeThemeTab = tab;
+        if (tab === 'cojustheme') {
+            cojusSpecialTab.classList.add('border-[var(--accent-color)]', 'text-[var(--accent-color)]');
+            cojusSpecialTab.classList.remove('border-transparent', 'text-[var(--text-color-dark)]');
+            freeThemesTab.classList.add('border-transparent', 'text-[var(--text-color-dark)]');
+            freeThemesTab.classList.remove('border-[var(--accent-color)]', 'text-[var(--accent-color)]');
+            uploadThemeBtn.classList.add('hidden');
+            themeSearchContainer.classList.add('hidden');
+        } else {
+            freeThemesTab.classList.add('border-[var(--accent-color)]', 'text-[var(--accent-color)]');
+            freeThemesTab.classList.remove('border-transparent', 'text-[var(--text-color-dark)]');
+            cojusSpecialTab.classList.add('border-transparent', 'text-[var(--text-color-dark)]');
+            cojusSpecialTab.classList.remove('border-[var(--accent-color)]', 'text-[var(--accent-color)]');
+            uploadThemeBtn.classList.remove('hidden');
+            themeSearchContainer.classList.remove('hidden');
+        }
+        themeSearchInput.value = ''; // 탭 전환 시 검색어 초기화
+        fetchAndDisplayThemes();
+    };
+
+    const fetchAndDisplayThemes = async (searchTerm = '', searchType = 'title') => {
+        themeStoreContent.innerHTML = `<p class="text-center py-10">${translations[currentLang].fetchingThemes}</p>`;
+        try {
+            let themes = await window.electronAPI.fetchThemeStore(activeThemeTab);
+
+            if (searchTerm) {
+                const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                themes = themes.filter(theme => {
+                    if (searchType === 'title') {
+                        return theme.name.toLowerCase().includes(lowerCaseSearchTerm);
+                    } else if (searchType === 'nickname') {
+                        return theme.nickname && theme.nickname.toLowerCase().includes(lowerCaseSearchTerm);
+                    }
+                    return false;
+                });
+            }
+
+            if (themes.length === 0) {
+                themeStoreContent.innerHTML = `<p class="text-center py-10">${translations[currentLang].noThemesFound}</p>`;
+                return;
+            }
+
+            themeStoreContent.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+
+            for (const theme of themes) {
+                const card = document.createElement('div');
+                card.className = 'bg-[var(--main-bg)] rounded-lg border border-[var(--border-color)] overflow-hidden flex flex-col';
+                
+                let actionButtonsHtml = '';
+                if (activeThemeTab === 'freetheme') {
+                    actionButtonsHtml = `
+                        <div class="absolute">
+                            <div class="relative group">
+                                <button class="p-1 rounded-full hover:bg-[var(--button-secondary-hover-bg)] focus:outline-none theme-actions-btn" data-theme-id="${theme.id}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-[var(--text-color)]"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                                </button>
+                                <div class="theme-actions-dropdown hidden absolute left-0 mt-2 w-32 bg-[var(--secondary-bg)] border border-[var(--border-color)] rounded-md shadow-lg z-10">
+                                    <button class="block w-full text-left px-4 py-2 text-sm text-[var(--text-color)] hover:bg-[var(--button-secondary-hover-bg)] edit-free-theme-btn" data-theme-id="${theme.id}" data-theme-name="${theme.name}" data-theme-nickname="${theme.nickname}" data-theme-json-url="${theme.json_url}" data-theme-image-url="${theme.image_url}">${translations[currentLang].editTheme}</button>
+                                    <button class="block w-full text-left px-4 py-2 text-sm text-[var(--text-color)] hover:bg-[var(--button-secondary-hover-bg)] delete-free-theme-btn" data-theme-id="${theme.id}" data-theme-name="${theme.name}">${translations[currentLang].deleteTheme}</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    ${actionButtonsHtml}
+                    <img src="${theme.image_url}" alt="${theme.name}" class="w-full h-40 object-cover">
+                    <div class="p-4 flex flex-col flex-grow">
+                        <h3 class="text-lg font-bold text-[var(--text-color)] truncate">${theme.name}</h3>
+                        ${activeThemeTab === 'freetheme' ? `<p class="text-sm text-[var(--text-color-dark)] mt-1">by ${theme.nickname}</p>` : ''}
+                        <div class="mt-auto pt-4">
+                            <button class="download-theme-btn w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition duration-200" data-json-url="${theme.json_url}" data-theme-name="${theme.name}">${translations[currentLang].downloadAndApply}</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+            themeStoreContent.appendChild(grid);
+
+            // Add event listeners for the new buttons
+            if (activeThemeTab === 'freetheme') {
+                themeStoreContent.querySelectorAll('.theme-actions-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const dropdown = button.closest('.group').querySelector('.theme-actions-dropdown');
+                        // Close all other open dropdowns
+                        document.querySelectorAll('.theme-actions-dropdown').forEach(d => {
+                            if (d !== dropdown) d.classList.add('hidden');
+                        });
+                        dropdown.classList.toggle('hidden');
+                    });
+                });
+
+                themeStoreContent.querySelectorAll('.edit-free-theme-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const themeId = button.dataset.themeId;
+                        const themeName = button.dataset.themeName;
+                        const themeNickname = button.dataset.themeNickname;
+                        const themeJsonUrl = button.dataset.themeJsonUrl;
+                        const themeImageUrl = button.dataset.themeImageUrl;
+                        
+                        promptPasswordAndExecute((password) => {
+                            openThemeUploadModalForEdit({ id: themeId, name: themeName, nickname: themeNickname, json_url: themeJsonUrl, image_url: themeImageUrl, password: password });
+                        });
+                        button.closest('.theme-actions-dropdown').classList.add('hidden');
+                    });
+                });
+
+                themeStoreContent.querySelectorAll('.delete-free-theme-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const themeId = button.dataset.themeId;
+                        const themeName = button.dataset.themeName;
+                        // Call a function to handle deletion with password confirmation
+                        promptPasswordAndExecute((password) => handleDeleteFreeTheme(themeId, themeName, password));
+                        button.closest('.theme-actions-dropdown').classList.add('hidden');
+                    });
+                });
+
+                // Close dropdowns when clicking anywhere else on the document
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.theme-actions-dropdown') && !e.target.closest('.theme-actions-btn')) {
+                        document.querySelectorAll('.theme-actions-dropdown').forEach(d => d.classList.add('hidden'));
+                    }
+                });
+            }
+
+        } catch (error) {
+            console.error('Error fetching themes:', error);
+            themeStoreContent.innerHTML = `<p class="text-red-400 text-center py-10">${error.message}</p>`;
+        }
+    };
+
+    themeStoreContent.addEventListener('click', async (e) => {
+        const downloadBtn = e.target.closest('.download-theme-btn');
+        if (downloadBtn) {
+            const themeName = downloadBtn.dataset.themeName;
+            const jsonUrl = downloadBtn.dataset.jsonUrl;
+
+            if (themes[themeName] || customThemes[themeName] || sharedThemes[themeName]) {
+                alert(translations[currentLang].themeNameExistsError);
+                return;
+            }
+
+            if (Object.keys(sharedThemes).length >= 3) {
+                alert(translations[currentLang].sharedThemeLimitError);
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = translations[currentLang].downloading;
+
+            try {
+                const response = await fetch(jsonUrl);
+                if (!response.ok) throw new Error('Failed to download theme file.');
+                const themeData = await response.json();
+
+                if (themeData.theme && typeof themeData.theme === 'object') {
+                    sharedThemes[themeName] = themeData.theme;
+                    await window.electronAPI.setSetting('sharedThemes', sharedThemes);
+                    populateThemeDropdown();
+                    saveAndApplyTheme(themeName);
+                    themeStoreModal.classList.add('hidden');
+                } else {
+                    throw new Error('Invalid theme file format');
+                }
+            } catch (error) {
+                console.error('Failed to download or apply theme:', error);
+                alert(error.message);
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = translations[currentLang].downloadAndApply;
+            }
+        }
+    });
+
+    themeStoreBtn.addEventListener('click', () => {
+        themeStoreModal.classList.remove('hidden');
+        switchThemeTab('cojustheme');
+    });
+
+    closeThemeStoreBtn.addEventListener('click', () => themeStoreModal.classList.add('hidden'));
+    cojusSpecialTab.addEventListener('click', () => switchThemeTab('cojustheme'));
+    freeThemesTab.addEventListener('click', () => switchThemeTab('freetheme'));
+
+    uploadThemeBtn.addEventListener('click', () => {
+        themeUploadModal.classList.remove('hidden');
+        themeUploadForm.reset();
+        uploadErrorMessage.textContent = '';
+    });
+
+    closeThemeUploadBtn.addEventListener('click', () => themeUploadModal.classList.add('hidden'));
+    cancelUploadBtn.addEventListener('click', () => themeUploadModal.classList.add('hidden'));
+
+    let currentEditingTheme = null; // To store the theme being edited
+
+    const openThemeUploadModalForEdit = (themeData, password = '') => {
+        currentEditingTheme = { ...themeData, password: password };
+        getEl('upload-theme-name').value = themeData.name;
+        getEl('upload-nickname').value = themeData.nickname;
+        // Password and file inputs should not be pre-filled for security reasons
+        getEl('upload-password').value = '';
+        getEl('upload-image-file').value = ''; // Clear file input
+        getEl('upload-json-file').value = ''; // Clear file input
+
+        // Change modal title and submit button text for editing
+        getEl('themeUploadTitle').textContent = translations[currentLang].editTheme; // Assuming you have this translation key
+        getEl('submit-upload-btn').textContent = translations[currentLang].saveChanges; // Assuming you have this translation key
+
+        themeUploadModal.classList.remove('hidden');
+        uploadErrorMessage.textContent = '';
+    };
+
+    const handleDeleteFreeTheme = async (themeId, themeName, password) => {
+        try {
+            const result = await window.electronAPI.deleteFreeTheme({ id: themeId, password: password });
+            if (result.success) {
+                alert(`${themeName} 테마가 성공적으로 삭제되었습니다.`);
+                fetchAndDisplayThemes(); // Refresh the list
+            } else {
+                throw new Error(result.message || '테마 삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert(`테마 삭제 중 오류 발생: ${error.message}`);
+        }
+    };
+
+    themeUploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        uploadErrorMessage.textContent = '';
+        const submitBtn = e.target.querySelector('#submit-upload-btn');
+        submitBtn.disabled = true;
+
+        const name = getEl('upload-theme-name').value;
+        const nickname = getEl('upload-nickname').value;
+        const password = getEl('upload-password').value;
+        const imageFile = getEl('upload-image-file').files[0];
+        const jsonFile = getEl('upload-json-file').files[0];
+
+        if (!name || !nickname || !password) { // Files are optional for edit
+            uploadErrorMessage.textContent = '테마 이름, 닉네임, 비밀번호는 필수 입력입니다.';
+            submitBtn.disabled = false;
+            return;
+        }
+
+        try {
+            let result;
+            if (currentEditingTheme) {
+                // Editing existing theme
+                result = await window.electronAPI.updateFreeTheme({
+                    id: currentEditingTheme.id,
+                    name, nickname, password: currentEditingTheme.password,
+                    imageFile: imageFile ? { path: imageFile.path, type: imageFile.type } : null,
+                    jsonFile: jsonFile ? { path: jsonFile.path, type: jsonFile.type } : null,
+                });
+            } else {
+                // Uploading new theme
+                if (!imageFile || !jsonFile) {
+                    uploadErrorMessage.textContent = '새 테마 업로드 시에는 대표 이미지와 테마 파일이 필수입니다.';
+                    submitBtn.disabled = false;
+                    return;
+                }
+                result = await window.electronAPI.uploadTheme({
+                    name, nickname, password,
+                    imageFile: { path: imageFile.path, type: imageFile.type },
+                    jsonFile: { path: jsonFile.path, type: jsonFile.type },
+                });
+            }
+
+            if (result.success) {
+                alert(translations[currentLang].uploadSuccess);
+                themeUploadModal.classList.add('hidden');
+                fetchAndDisplayThemes(); // Refresh the list
+            } else {
+                throw new Error(result.message || '업로드/수정 실패');
+            }
+        } catch (error) {
+            console.error('Upload/Edit error:', error);
+            uploadErrorMessage.textContent = `${translations[currentLang].uploadError} ${error.message}`;
+        } finally {
+            submitBtn.disabled = false;
+            currentEditingTheme = null; // Reset editing state
+            // Restore original modal title and button text
+            getEl('themeUploadTitle').textContent = translations[currentLang].themeUploadTitle;
+            getEl('submit-upload-btn').textContent = translations[currentLang].submit;
+        }
+    });
+
+    themeSearchBtn.addEventListener('click', () => {
+        const searchTerm = themeSearchInput.value.trim();
+        const searchType = themeSearchType.value;
+        fetchAndDisplayThemes(searchTerm, searchType);
+    });
+
+    themeSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            themeSearchBtn.click();
+        }
+    });
+
+    // =================================================================
+    // PASSWORD CONFIRMATION MODAL
+    // =================================================================
+    let passwordConfirmCallback = null;
+
+    const promptPasswordAndExecute = (callback) => {
+        passwordConfirmCallback = callback;
+        passwordConfirmInput.value = '';
+        passwordConfirmErrorMessage.textContent = '';
+        passwordConfirmModal.classList.remove('hidden');
+    };
+
+    closePasswordConfirmModalBtn.addEventListener('click', () => {
+        passwordConfirmModal.classList.add('hidden');
+        passwordConfirmCallback = null;
+    });
+
+    passwordConfirmCancelBtn.addEventListener('click', () => {
+        passwordConfirmModal.classList.add('hidden');
+        passwordConfirmCallback = null;
+    });
+
+    passwordConfirmSubmitBtn.addEventListener('click', () => {
+        const password = passwordConfirmInput.value;
+        if (!password) {
+            passwordConfirmErrorMessage.textContent = '비밀번호를 입력해주세요.';
+            return;
+        }
+        passwordConfirmModal.classList.add('hidden');
+        if (passwordConfirmCallback) {
+            passwordConfirmCallback(password);
+        }
+        passwordConfirmCallback = null;
+    });
+
+    passwordConfirmInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            passwordConfirmSubmitBtn.click();
+        }
+    });
 
     // =================================================================
     // LANGUAGE MANAGEMENT & INITIALIZATION

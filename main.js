@@ -6,6 +6,7 @@ const https = require('https');
 const http = require('http');
 const { spawn } = require('child_process');
 const { URL } = require('url');
+const { createClient } = require('@supabase/supabase-js');
 const Store = require('electron-store');
 const { scanContent, vulnerabilityPatterns } = require('./scanner.js');
 const os = require('os');
@@ -30,6 +31,11 @@ if (!gotTheLock) {
 }
 
 const store = new Store();
+
+// Supabase Client
+const supabaseUrl = 'https://gxjznorcwnqajdotlmxv.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4anpub3Jjd25xYWpkb3RsbXh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2Mzc2MjIsImV4cCI6MjA2MzIxMzYyMn0.kuOuJzp-DcDDEIfQ3sMZDi0b0447U_VCQrWZcj-UWsE';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 이 Client ID는 프록시 서버의 환경 변수에 설정되므로, 여기서도 일치시켜주는 것이 좋습니다.
 process.env.GITHUB_CLIENT_ID = 'Ov23lioAXZ3X5DQKfu2i';
@@ -711,6 +717,154 @@ const createWindow = () => {
         
         const finalData = {...data, logoData: logoDataUri};
         reportWindow.webContents.send('render-report-data', finalData);
+    });
+
+    // --- Theme Store Handlers ---
+    ipcMain.handle('theme-store:fetch', async (event, table) => {
+        const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
+        if (error) {
+            console.error(`Error fetching from ${table}:`, error);
+            throw error;
+        }
+        return data;
+    });
+
+    ipcMain.handle('theme-store:upload', async (event, { name, nickname, password, imageFile, jsonFile }) => {
+        try {
+            // 1. Upload Image
+            const imageExt = path.extname(imageFile.path);
+            const imageFileName = `public/${Date.now()}${imageExt}`;
+            const imageContent = fs.readFileSync(imageFile.path);
+            const { error: imageError } = await supabase.storage.from('theme-images').upload(imageFileName, imageContent, {
+                contentType: imageFile.type,
+                upsert: false
+            });
+            if (imageError) throw new Error(`Image upload failed: ${imageError.message}`);
+            const { data: { publicUrl: imageUrl } } = supabase.storage.from('theme-images').getPublicUrl(imageFileName);
+
+            // 2. Upload JSON
+            const jsonFileName = `public/${Date.now()}.json`;
+            const jsonContent = fs.readFileSync(jsonFile.path);
+            const { error: jsonError } = await supabase.storage.from('theme-files').upload(jsonFileName, jsonContent, {
+                contentType: 'application/json',
+                upsert: false
+            });
+            if (jsonError) throw new Error(`JSON upload failed: ${jsonError.message}`);
+            const { data: { publicUrl: jsonUrl } } = supabase.storage.from('theme-files').getPublicUrl(jsonFileName);
+
+            // 3. Insert into DB
+            const password_hash = crypto.createHash('md5').update(password).digest('hex');
+            const { error: dbError } = await supabase.from('freetheme').insert({
+                name,
+                nickname,
+                password_hash,
+                image_url: imageUrl,
+                json_url: jsonUrl
+            });
+            if (dbError) throw new Error(`Database insert failed: ${dbError.message}`);
+
+            return { success: true };
+        } catch (error) {
+            console.error('Theme upload process failed:', error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('theme-store:delete-free', async (event, { id, password }) => {
+        try {
+            const password_hash = crypto.createHash('md5').update(password).digest('hex');
+            const { data, error: fetchError } = await supabase.from('freetheme').select('password_hash, image_url, json_url').eq('id', id).single();
+
+            if (fetchError || !data) {
+                throw new Error('테마를 찾을 수 없습니다.');
+            }
+            if (data.password_hash !== password_hash) {
+                throw new Error('비밀번호가 일치하지 않습니다.');
+            }
+
+            // Delete from storage
+            const imagePath = data.image_url.split('/').pop();
+            const jsonPath = data.json_url.split('/').pop();
+            await supabase.storage.from('theme-images').remove([`public/${imagePath}`]);
+            await supabase.storage.from('theme-files').remove([`public/${jsonPath}`]);
+
+            // Delete from database
+            const { error: deleteError } = await supabase.from('freetheme').delete().eq('id', id);
+            if (deleteError) throw new Error(`Database delete failed: ${deleteError.message}`);
+
+            return { success: true };
+        } catch (error) {
+            console.error('Theme deletion failed:', error);
+            return { success: false, message: error.message };
+        }
+    });
+
+    ipcMain.handle('theme-store:update-free', async (event, { id, name, nickname, password, imageFile, jsonFile }) => {
+        try {
+            const password_hash = crypto.createHash('md5').update(password).digest('hex');
+            const { data: existingTheme, error: fetchError } = await supabase.from('freetheme').select('password_hash, image_url, json_url').eq('id', id).single();
+
+            if (fetchError || !existingTheme) {
+                throw new Error('테마를 찾을 수 없습니다.');
+            }
+            if (existingTheme.password_hash !== password_hash) {
+                throw new Error('비밀번호가 일치하지 않습니다.');
+            }
+
+            let imageUrl = existingTheme.image_url;
+            let jsonUrl = existingTheme.json_url;
+
+            // Update image if new one is provided
+            if (imageFile) {
+                // Delete old image
+                const oldImagePath = existingTheme.image_url.split('/').pop();
+                await supabase.storage.from('theme-images').remove([`public/${oldImagePath}`]);
+
+                // Upload new image
+                const imageExt = path.extname(imageFile.path);
+                const imageFileName = `public/${Date.now()}${imageExt}`;
+                const imageContent = fs.readFileSync(imageFile.path);
+                const { error: uploadImageError } = await supabase.storage.from('theme-images').upload(imageFileName, imageContent, {
+                    contentType: imageFile.type,
+                    upsert: false
+                });
+                if (uploadImageError) throw new Error(`Image upload failed: ${uploadImageError.message}`);
+                const { data: { publicUrl: newImageUrl } } = supabase.storage.from('theme-images').getPublicUrl(imageFileName);
+                imageUrl = newImageUrl;
+            }
+
+            // Update JSON if new one is provided
+            if (jsonFile) {
+                // Delete old JSON
+                const oldJsonPath = existingTheme.json_url.split('/').pop();
+                await supabase.storage.from('theme-files').remove([`public/${oldJsonPath}`]);
+
+                // Upload new JSON
+                const jsonFileName = `public/${Date.now()}.json`;
+                const jsonContent = fs.readFileSync(jsonFile.path);
+                const { error: uploadJsonError } = await supabase.storage.from('theme-files').upload(jsonFileName, jsonContent, {
+                    contentType: 'application/json',
+                    upsert: false
+                });
+                if (uploadJsonError) throw new Error(`JSON upload failed: ${uploadJsonError.message}`);
+                const { data: { publicUrl: newJsonUrl } } = supabase.storage.from('theme-files').getPublicUrl(jsonFileName);
+                jsonUrl = newJsonUrl;
+            }
+
+            // Update database record
+            const { error: updateError } = await supabase.from('freetheme').update({
+                name,
+                nickname,
+                image_url: imageUrl,
+                json_url: jsonUrl
+            }).eq('id', id);
+            if (updateError) throw new Error(`Database update failed: ${updateError.message}`);
+
+            return { success: true };
+        } catch (error) {
+            console.error('Theme update failed:', error);
+            return { success: false, message: error.message };
+        }
     });
 
     mainWindow.loadFile('index.html');

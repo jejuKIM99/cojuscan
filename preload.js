@@ -51,6 +51,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportTheme: (themeData) => ipcRenderer.invoke('theme:export', themeData),
   importTheme: () => ipcRenderer.invoke('theme:import'),
 
+  // --- Theme Store ---
+  fetchThemeStore: (table) => ipcRenderer.invoke('theme-store:fetch', table),
+  uploadTheme: (data) => ipcRenderer.invoke('theme-store:upload', data),
+  deleteFreeTheme: (data) => ipcRenderer.invoke('theme-store:delete-free', data),
+  updateFreeTheme: (data) => ipcRenderer.invoke('theme-store:update-free', data),
+
   onGetRendererState: (callback) => ipcRenderer.on('get-renderer-state', callback),
   sendRendererStateForQuit: (state) => ipcRenderer.send('renderer-state-for-quit', state),
 });
