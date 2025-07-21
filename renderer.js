@@ -1912,7 +1912,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Do not clear currentScannedUrl here for GitHub scans
-            const results = await window.electronAPI.startScan(scanType, { projectPath, filesToScan: checkedFiles });
+            let results;
+            if (scanType === 'simple') {
+                results = await window.electronAPI.startSimpleScan({ projectPath, filesToScan: checkedFiles });
+            } else if (scanType === 'precision') {
+                results = await window.electronAPI.startPrecisionScan(projectPath, checkedFiles);
+            }
             currentScanResults = results;
             displayResults(results);
             if(scanType === 'precision' && Object.keys(currentFilteredScanResults).length > 0) {

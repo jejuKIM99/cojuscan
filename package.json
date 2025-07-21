@@ -32,6 +32,7 @@
   "build": {
     "appId": "com.cojuscan.app",
     "productName": "cojuscan",
+    "asar": false,
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -50,6 +51,9 @@
       "target": "nsis",
       "icon": "build/icon.ico"
     },
+    "asarUnpack": [
+      "**\\node_modules\\@supabase\\supabase-js\\**"
+    ],
     "nsis": {
       "oneClick": false,
       "perMachine": false,

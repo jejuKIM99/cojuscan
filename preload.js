@@ -11,7 +11,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // --- Core Functionality ---
   selectDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
-  startScan: (scanType, payload) => ipcRenderer.invoke('scan:start', scanType, payload),
+  startSimpleScan: (payload) => ipcRenderer.invoke('scan:simple', payload),
+  startPrecisionScan: (projectPath, filesToScan) => ipcRenderer.invoke('scan:precision', projectPath, filesToScan),
   onScanProgress: (callback) => {
     const listener = (_event, value) => callback(value);
     ipcRenderer.on('scan:progress', listener);

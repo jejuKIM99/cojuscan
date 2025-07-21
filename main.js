@@ -47,6 +47,9 @@ const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
 const LOCAL_PYTHON_DIR = path.join(RESOURCES_PATH, '.py-semgrep');
 const LOCAL_SEMGREP_EXE = path.join(LOCAL_PYTHON_DIR, 'Scripts', 'semgrep.exe');
 
+// Semgrep CLI 설치 경로 (사용자 데이터 디렉토리)
+const semgrepExecutable = LOCAL_SEMGREP_EXE;
+
 if (process.defaultApp) {
     if (process.argv.length >= 2) {
         app.setAsDefaultProtocolClient('cojuscan', process.execPath, [path.resolve(process.argv[1])]);
@@ -118,6 +121,118 @@ function loadIconsAsDataUris() {
     }
     return icons;
 }
+
+// New runSemgrepScan function
+async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
+    if (filesToScan.length === 0) return {};
+
+    const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
+
+    return new Promise((resolve, reject) => {
+        const fullFilePaths = filesToScan.map(f => path.join(projectPath, f));
+        const args = ['scan', '--json', '--config=auto', ...fullFilePaths];
+        if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
+        
+        // Use the globally defined semgrepExecutable
+        const semgrep = spawn(semgrepExecutable, args, { cwd: projectPath });
+        
+        semgrep.on('error', (err) => {
+            if (err.code === 'ENOENT') {
+                return reject(new Error('SEMGREP_NOT_FOUND'));
+            }
+            return reject(err);
+        });
+
+        let jsonData = '';
+        let errorData = '';
+        semgrep.stdout.on('data', (data) => { jsonData += data.toString(); });
+        semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
+
+        semgrep.on('close', (code) => {
+            if (code > 1) { 
+                console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
+                const filteredError = errorData.split('\n').filter(line => 
+                    !line.includes('UserWarning: pkg_resources is deprecated') && 
+                    !line.includes('(ca-certs): Ignored 1 trust anchors') &&
+                    line.trim() !== ''
+                ).join('\n').trim();
+
+                let finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 비정상 종료되었습니다. 로컬 Python 환경이 손상되었을 수 있습니다. 앱을 재설치하거나 수동으로 Semgrep을 설치해보세요.`;
+                if (filteredError) {
+                    finalErrorMessage = `스캔 실패. 상세: ${filteredError}`;
+                }
+                
+                return reject(new Error(finalErrorMessage));
+            }
+
+            const significantError = errorData.split('\n').filter(line => 
+                !line.includes('UserWarning: pkg_resources is deprecated') &&
+                !line.includes('(ca-certs): Ignored 1 trust anchors') &&
+                line.trim() !== ''
+            ).join('\n').trim();
+
+            if (jsonData.trim() === '' && significantError) {
+                console.error(`Semgrep 스캔은 종료되었으나 결과가 없으며, 오류가 감지되었습니다: ${significantError}`);
+                return reject(new Error(`스캔 엔진 오류가 발생했습니다: ${significantError}`));
+            }
+
+            if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
+            try {
+                if (jsonData.trim() === '') {
+                    return resolve({});
+                }
+                const parsedOutput = JSON.parse(jsonData);
+                const results = {};
+                const fileContentsCache = new Map();
+                
+                parsedOutput.results.forEach(finding => {
+                    const relativePath = path.relative(projectPath, finding.path);
+                    if (!results[relativePath]) results[relativePath] = [];
+                    
+                    let lines = fileContentsCache.get(finding.path);
+                    if (!lines) {
+                        try {
+                            lines = fs.readFileSync(finding.path, 'utf-8').split('\n');
+                            fileContentsCache.set(finding.path, lines);
+                        } catch (e) {
+                            console.error(`파일을 읽을 수 없습니다 ${finding.path}: ${e}`);
+                            lines = [];
+                        }
+                    }
+                    
+                    const lineContent = lines[finding.start.line - 1] || '';
+                    
+                    let ruleInfo = Array.from(rulesMap.values()).find(p => p.semgrepId === finding.check_id);
+                    if (!ruleInfo) {
+                        ruleInfo = rulesMap.get(finding.check_id) || 
+                                   Array.from(rulesMap.values()).find(p => p.id && finding.check_id.includes(p.id));
+                    }
+
+                    const semgrepMeta = finding.extra.metadata || {};
+
+                    results[relativePath].push({
+                        id: finding.check_id,
+                                line: finding.start.line,
+                                code: lineContent.trim(),
+                                description: ruleInfo ? ruleInfo.description : finding.extra.message,
+                                description_en: ruleInfo ? (ruleInfo.details_en || ruleInfo.description) : finding.extra.message,
+                                severity: mapSeverity(finding.extra.severity),
+                                name: ruleInfo ? ruleInfo.name : (semgrepMeta.name || finding.check_id),
+                                name_en: ruleInfo ? ruleInfo.name_en : (semgrepMeta.name || finding.check_id),
+                                category: ruleInfo ? ruleInfo.category : (semgrepMeta.category || 'Unknown'),
+                                category_en: ruleInfo ? ruleInfo.category_en : (semgrepMeta.category || 'Unknown'),
+                                recommendation_ko: ruleInfo ? ruleInfo.recommendation_ko : (semgrepMeta.recommendation || 'N/A'),
+                                recommendation_en: ruleInfo ? ruleInfo.recommendation_en : (semgrepMeta.recommendation || 'N/A'),
+                            });
+                        });
+                        resolve(results);
+                    } catch (e) {
+                        console.error("Semgrep 스캔 JSON 파싱 실패:", e, `\nJSON Data: ${jsonData}`);
+                        reject(new Error('스캔 결과 파싱에 실패했습니다.'));
+                    }
+                });
+            });
+        }
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
@@ -355,157 +470,28 @@ const createWindow = () => {
         }
     });
 
-    ipcMain.handle('scan:start', async (event, scanType, { projectPath, filesToScan }) => {
+    ipcMain.handle('scan:simple', async (event, { projectPath, filesToScan }) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         
-        if (scanType === 'simple') {
-            const results = {};
-            const totalFiles = filesToScan.length;
-            for (let i = 0; i < totalFiles; i++) {
-                const file = filesToScan[i];
-                const filePath = path.join(projectPath, file);
-                try {
-                    const content = fs.readFileSync(filePath, 'utf-8');
-                    const findings = scanContent(content);
-                    if (findings.length > 0) results[file] = findings;
-                } catch (error) { console.error(`파일 읽기 오류: ${filePath}`, error); }
-                const progress = Math.round(((i + 1) / totalFiles) * 100);
-                if(currentWindow) currentWindow.webContents.send('scan:progress', { progress, file });
-            }
-            return results;
-        } 
-        else if (scanType === 'precision') {
-            if (filesToScan.length === 0) return {};
-
-            // ▼▼▼▼▼ Semgrep 경로 탐색 로직 수정 ▼▼▼▼▼
-            const isPackaged = app.isPackaged;
-            const resourcesPath = isPackaged ? process.resourcesPath : __dirname;
-            const semgrepBasePath = path.join(resourcesPath, '.py-semgrep');
-            
-            let command;
-            if (IS_WINDOWS) {
-                command = path.join(semgrepBasePath, 'Scripts', 'semgrep.exe');
-            } else { // macOS, Linux
-                command = path.join(semgrepBasePath, 'bin', 'semgrep');
-            }
-
-            // 로컬 Semgrep이 존재하지 않을 경우, 시스템 PATH에서 찾도록 fallback 처리
-            if (!fs.existsSync(command)) {
-                console.warn(`로컬 Semgrep을 찾을 수 없습니다: ${command}. 시스템 PATH에서 semgrep을 사용합니다.`);
-                command = 'semgrep';
-            }
-            // ▲▲▲▲▲ Semgrep 경로 탐색 로직 수정 끝 ▲▲▲▲▲
-
-            const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
-
-            return new Promise((resolve, reject) => {
-                const fullFilePaths = filesToScan.map(f => path.join(projectPath, f));
-                const args = ['scan', '--json', '--config=auto', ...fullFilePaths];
-                if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
-                const semgrep = spawn(command, args, { cwd: projectPath });
-                
-                semgrep.on('error', (err) => {
-                    if (err.code === 'ENOENT') {
-                        return reject(new Error('SEMGREP_NOT_FOUND'));
-                    }
-                    return reject(err);
-                });
-
-                let jsonData = '';
-                let errorData = '';
-                semgrep.stdout.on('data', (data) => { jsonData += data.toString(); });
-                semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
-
-                semgrep.on('close', (code) => {
-                    // Semgrep은 취약점을 찾으면 종료 코드 1을 반환합니다. 코드 1까지는 정상 처리로 간주해야 합니다.
-                    if (code > 1) { 
-                        console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
-                        const filteredError = errorData.split('\n').filter(line => 
-                            !line.includes('UserWarning: pkg_resources is deprecated') && 
-                            !line.includes('(ca-certs): Ignored 1 trust anchors') &&
-                            line.trim() !== ''
-                        ).join('\n').trim();
-
-                        let finalErrorMessage = `스캔 엔진(Semgrep)이 오류 코드 ${code}로 비정상 종료되었습니다. 로컬 Python 환경이 손상되었을 수 있습니다. 앱을 재설치하거나 수동으로 Semgrep을 설치해보세요.`;
-                        if (filteredError) {
-                            finalErrorMessage = `스캔 실패. 상세: ${filteredError}`;
-                        }
-                        
-                        return reject(new Error(finalErrorMessage));
-                    }
-
-                    // ▼▼▼▼▼ 핵심 수정 부분 시작 ▼▼▼▼▼
-                    // stdout(jsonData)가 비어 있고, stderr(errorData)에 무시할 수 없는 내용이 있다면 오류로 간주합니다.
-                    const significantError = errorData.split('\n').filter(line => 
-                        !line.includes('UserWarning: pkg_resources is deprecated') &&
-                        !line.includes('(ca-certs): Ignored 1 trust anchors') &&
-                        line.trim() !== ''
-                    ).join('\n').trim();
-
-                    if (jsonData.trim() === '' && significantError) {
-                        console.error(`Semgrep 스캔은 종료되었으나 결과가 없으며, 오류가 감지되었습니다: ${significantError}`);
-                        return reject(new Error(`스캔 엔진 오류가 발생했습니다: ${significantError}`));
-                    }
-                    // ▲▲▲▲▲ 핵심 수정 부분 끝 ▲▲▲▲▲
-
-                    if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 90, file: '결과 분석 중...' });
-                    try {
-                        if (jsonData.trim() === '') {
-                             // 이제 이 경우는 정말로 취약점이 없는 '깨끗한' 상태로 확신할 수 있습니다.
-                            return resolve({});
-                        }
-                        const parsedOutput = JSON.parse(jsonData);
-                        const results = {};
-                        const fileContentsCache = new Map();
-                        
-                        parsedOutput.results.forEach(finding => {
-                            const relativePath = path.relative(projectPath, finding.path);
-                            if (!results[relativePath]) results[relativePath] = [];
-                            
-                            let lines = fileContentsCache.get(finding.path);
-                            if (!lines) {
-                                try {
-                                    lines = fs.readFileSync(finding.path, 'utf-8').split('\n');
-                                    fileContentsCache.set(finding.path, lines);
-                                } catch (e) {
-                                    console.error(`파일을 읽을 수 없습니다 ${finding.path}: ${e}`);
-                                    lines = [];
-                                }
-                            }
-                            
-                            const lineContent = lines[finding.start.line - 1] || '';
-                            
-                            let ruleInfo = Array.from(rulesMap.values()).find(p => p.semgrepId === finding.check_id);
-                            if (!ruleInfo) {
-                                ruleInfo = rulesMap.get(finding.check_id) || 
-                                           Array.from(rulesMap.values()).find(p => p.id && finding.check_id.includes(p.id));
-                            }
-
-                            const semgrepMeta = finding.extra.metadata || {};
-
-                            results[relativePath].push({
-                                id: finding.check_id,
-                                line: finding.start.line,
-                                code: lineContent.trim(),
-                                description: ruleInfo ? ruleInfo.description : finding.extra.message,
-                                description_en: ruleInfo ? (ruleInfo.details_en || ruleInfo.description) : finding.extra.message,
-                                severity: mapSeverity(finding.extra.severity),
-                                name: ruleInfo ? ruleInfo.name : (semgrepMeta.name || finding.check_id),
-                                name_en: ruleInfo ? ruleInfo.name_en : (semgrepMeta.name || finding.check_id),
-                                category: ruleInfo ? ruleInfo.category : (semgrepMeta.category || 'Unknown'),
-                                category_en: ruleInfo ? ruleInfo.category_en : (semgrepMeta.category || 'Unknown'),
-                                recommendation_ko: ruleInfo ? ruleInfo.recommendation_ko : (semgrepMeta.recommendation || 'N/A'),
-                                recommendation_en: ruleInfo ? ruleInfo.recommendation_en : (semgrepMeta.recommendation || 'N/A'),
-                            });
-                        });
-                        resolve(results);
-                    } catch (e) {
-                        console.error("Semgrep 스캔 JSON 파싱 실패:", e, `\nJSON Data: ${jsonData}`);
-                        reject(new Error('스캔 결과 파싱에 실패했습니다.'));
-                    }
-                });
-            });
+        const results = {};
+        const totalFiles = filesToScan.length;
+        for (let i = 0; i < totalFiles; i++) {
+            const file = filesToScan[i];
+            const filePath = path.join(projectPath, file);
+            try {
+                const content = fs.readFileSync(filePath, 'utf-8');
+                const findings = scanContent(content);
+                if (findings.length > 0) results[file] = findings;
+            } catch (error) { console.error(`파일 읽기 오류: ${filePath}`, error); }
+            const progress = Math.round(((i + 1) / totalFiles) * 100);
+            if(currentWindow) currentWindow.webContents.send('scan:progress', { progress, file });
         }
+        return results;
+    });
+
+    ipcMain.handle('scan:precision', async (event, projectPath, filesToScan) => {
+        const currentWindow = BrowserWindow.fromWebContents(event.sender);
+        return runSemgrepScan(projectPath, filesToScan, currentWindow);
     });
     
     ipcMain.handle('url:scan', async (event, { url, verificationToken }) => {
