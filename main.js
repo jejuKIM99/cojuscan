@@ -376,7 +376,26 @@ const createWindow = () => {
         } 
         else if (scanType === 'precision') {
             if (filesToScan.length === 0) return {};
-            const command = IS_WINDOWS && fs.existsSync(LOCAL_SEMGREP_EXE) ? LOCAL_SEMGREP_EXE : 'semgrep';
+
+            // ▼▼▼▼▼ Semgrep 경로 탐색 로직 수정 ▼▼▼▼▼
+            const isPackaged = app.isPackaged;
+            const resourcesPath = isPackaged ? process.resourcesPath : __dirname;
+            const semgrepBasePath = path.join(resourcesPath, '.py-semgrep');
+            
+            let command;
+            if (IS_WINDOWS) {
+                command = path.join(semgrepBasePath, 'Scripts', 'semgrep.exe');
+            } else { // macOS, Linux
+                command = path.join(semgrepBasePath, 'bin', 'semgrep');
+            }
+
+            // 로컬 Semgrep이 존재하지 않을 경우, 시스템 PATH에서 찾도록 fallback 처리
+            if (!fs.existsSync(command)) {
+                console.warn(`로컬 Semgrep을 찾을 수 없습니다: ${command}. 시스템 PATH에서 semgrep을 사용합니다.`);
+                command = 'semgrep';
+            }
+            // ▲▲▲▲▲ Semgrep 경로 탐색 로직 수정 끝 ▲▲▲▲▲
+
             const rulesMap = new Map(vulnerabilityPatterns.map(p => [p.id, p]));
 
             return new Promise((resolve, reject) => {

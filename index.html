@@ -14,7 +14,7 @@
         html, body { height: 100%; overflow: hidden; }
         body { font-family: 'Inter', sans-serif; background-color: var(--main-bg); color: var(--text-color); -ms-overflow-style: none; scrollbar-width: none; }
         body::-webkit-scrollbar { display: none; }
-        #title-bar { -webkit-app-region: drag; }
+        #title-bar { -webkit-app-region: drag; background-size: 400% 400%; }
         #title-bar-btns { -webkit-app-region: no-drag; }
         .file-tree ul { padding-left: 1rem; }
         .file-tree .folder-label { cursor: pointer; }
@@ -28,6 +28,27 @@
         #results-container::-webkit-scrollbar-track, #file-tree-container::-webkit-scrollbar-track, #help-modal-content::-webkit-scrollbar-track, #vulnerabilities-list::-webkit-scrollbar-track, #theme-editor-properties::-webkit-scrollbar-track, #url-scan-modal-content::-webkit-scrollbar-track, #verified-url-list::-webkit-scrollbar-track, #url-scan-info-panel::-webkit-scrollbar-track, #github-modal-content::-webkit-scrollbar-track { background: var(--scrollbar-track-color); }
         #results-container::-webkit-scrollbar-thumb, #file-tree-container::-webkit-scrollbar-thumb, #help-modal-content::-webkit-scrollbar-thumb, #vulnerabilities-list::-webkit-scrollbar-thumb, #theme-editor-properties::-webkit-scrollbar-thumb, #url-scan-modal-content::-webkit-scrollbar-thumb, #verified-url-list::-webkit-scrollbar-thumb, #url-scan-info-panel::-webkit-scrollbar-thumb, #github-modal-content::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-color); border-radius: 4px; border: 2px solid var(--scrollbar-track-color); }
         .ext-shield { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-family: 'Verdana', sans-serif; color: white; height: 20px; line-height: 16px; }
+
+        /* cojus-special 테마 배경 이미지 스타일 */
+        .cojus-special-background {
+            position: relative;
+            background-size: cover;
+            background-position: center;
+        }
+        .cojus-special-background::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5); /* 어두운 오버레이 */
+            z-index: 1;
+        }
+        .cojus-special-background > * {
+            position: relative;
+            z-index: 2;
+        }
 
         /* 테마 편집 모드에서 메인 컨텐츠 비활성화 */
         body.theme-editing-active .main-content {
@@ -110,7 +131,7 @@
     </style>
 </head>
 <body class="select-none">
-    <div id="title-bar" class="h-8 flex justify-between items-center fixed top-0 left-0 right-0 z-50 bg-[var(--title-bar-bg)]">
+    <div id="title-bar" class="h-8 flex justify-between items-center fixed top-0 left-0 right-0 z-50" style="background: var(--title-bar-bg);">
         <div class="flex items-center pl-3">
             <div class="text-sm font-bold text-[var(--title-bar-text-color)]">cojuscan</div>
             <span id="app-version" class="ml-2 text-xs font-mono text-[var(--title-bar-version-text-color)]"></span>
