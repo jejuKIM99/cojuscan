@@ -32,22 +32,39 @@
         /* cojus-special 테마 배경 이미지 스타일 */
         .cojus-special-background {
             position: relative;
-            background-size: cover;
-            background-position: center;
+            overflow: hidden; /* 자식 요소의 스크롤을 위해 부모의 스크롤은 비활성화 */
+            z-index: 0;
         }
         .cojus-special-background::before {
-            content: "";
+            content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5); /* 어두운 오버레이 */
-            z-index: 1;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(var(--background-filter-color), var(--background-filter-color)), var(--special-theme-bg-url);
+            background-position: center;
+            background-size: var(--background-size);
+            background-repeat: no-repeat;
+            z-index: -1; /* 콘텐츠 뒤에 위치 */
         }
+        /* 컨테이너 대신 직계 자식(ul, p)이 스크롤되도록 설정 */
         .cojus-special-background > * {
-            position: relative;
-            z-index: 2;
+            height: 100%;
+            overflow-y: auto;
+            position: relative; /* z-index 적용을 위해 */
+            z-index: 1; /* ::before 가상 요소 위에 오도록 */
+            /* 부모로부터 스크롤바 스타일 상속 */
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb-color) var(--scrollbar-track-color);
+        }
+        .cojus-special-background > *::-webkit-scrollbar {
+            width: 8px;
+        }
+        .cojus-special-background > *::-webkit-scrollbar-track {
+            background: var(--scrollbar-track-color);
+        }
+        .cojus-special-background > *::-webkit-scrollbar-thumb {
+            background-color: var(--scrollbar-thumb-color);
+            border-radius: 4px;
+            border: 2px solid var(--scrollbar-track-color);
         }
 
         /* 테마 편집 모드에서 메인 컨텐츠 비활성화 */
@@ -127,6 +144,10 @@
             100% {
                 transform: translateX(min(0px, calc(120px - 100%))); /* Pause at the end */
             }
+        }
+        .object-cover{
+            object-fit: contain !important;
+            background-color: #000 !important;
         }
     </style>
 </head>

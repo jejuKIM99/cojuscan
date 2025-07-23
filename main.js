@@ -872,6 +872,49 @@ const createWindow = () => {
         }
     });
 
+    ipcMain.handle('theme:download-background-image', async (event, imageUrl) => {
+        try {
+            const bgDir = path.join(app.getPath('userData'), 'theme_backgrounds');
+            if (!fs.existsSync(bgDir)) {
+                fs.mkdirSync(bgDir, { recursive: true });
+            }
+
+            const response = await net.fetch(imageUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch image: ${response.statusText}`);
+            }
+            const imageBuffer = await response.arrayBuffer();
+
+            const urlObject = new URL(imageUrl);
+            const extension = path.extname(urlObject.pathname) || '.jpg'; // 기본 확장자
+            const hash = crypto.createHash('md5').update(imageUrl).digest('hex');
+            const localFilename = `${hash}${extension}`;
+            const localPath = path.join(bgDir, localFilename);
+
+            fs.writeFileSync(localPath, Buffer.from(imageBuffer));
+            
+            // CSS에서 사용할 수 있도록 file:// URL로 변환하여 반환
+            return path.win32.normalize(localPath);
+        } catch (error) {
+            console.error('Background image download failed:', error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('theme:delete-background-image', async (event, fileUrl) => {
+        try {
+            if (fileUrl && fileUrl.startsWith('C:')) {
+                 if (fs.existsSync(fileUrl)) {
+                    fs.unlinkSync(fileUrl);
+                    return { success: true };
+                }
+            }
+        } catch (error) {
+            console.error('Failed to delete background image:', error);
+        }
+        return { success: false };
+    });
+
     mainWindow.loadFile('index.html');
 };
 

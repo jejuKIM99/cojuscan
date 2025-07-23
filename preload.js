@@ -56,7 +56,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fetchThemeStore: (table) => ipcRenderer.invoke('theme-store:fetch', table),
   uploadTheme: (data) => ipcRenderer.invoke('theme-store:upload', data),
   deleteFreeTheme: (data) => ipcRenderer.invoke('theme-store:delete-free', data),
-  updateFreeTheme: (data) => ipcRenderer.invoke('theme-store:update-free', data),
+  updateFreeTheme: (themeData) => ipcRenderer.invoke('theme-store:update-free', themeData),
+    downloadBackgroundImage: (imageUrl) => ipcRenderer.invoke('theme:download-background-image', imageUrl),
+    deleteBackgroundImage: (fileUrl) => ipcRenderer.invoke('theme:delete-background-image', fileUrl),
 
   onGetRendererState: (callback) => ipcRenderer.on('get-renderer-state', callback),
   sendRendererStateForQuit: (state) => ipcRenderer.send('renderer-state-for-quit', state),

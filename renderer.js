@@ -266,6 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             '--title-bar-bg': '#000000', '--title-bar-text-color': '#E0E0E0', '--title-bar-version-text-color': '#9ca3af', '--title-bar-button-color': '#E0E0E0', '--title-bar-button-hover-bg': '#374151', '--title-bar-close-button-hover-bg': '#dc2626', '--title-bar-close-button-hover-color': '#FFFFFF',
             '--button-url-scan-bg': '#8b5cf6', '--button-url-scan-hover-bg': '#7c3aed', '--button-url-scan-text': '#ffffff',
             '--url-modal-border-color': '#8b5cf6', '--url-modal-header-color': '#a78bfa', '--url-modal-progress-bar-bg': '#8b5cf6',
+            '--background-filter-color': '#ffffffba'
         },
         StarLight: {
             '--main-bg': '#000000', '--secondary-bg': '#111111', '--accent-color': '#00e5ff', '--text-color': '#e0e0e0', '--text-color-dark': '#888888', '--border-color': '#222222', '--button-primary-bg': '#005f6b', '--button-primary-hover-bg': '#008c9e', '--button-primary-text': '#ffffff', '--button-secondary-bg': '#2a2a2a', '--button-secondary-hover-bg': '#3a3a3a', '--button-scan-simple-bg': '#0077b6', '--button-scan-simple-hover-bg': '#0096c7', '--button-scan-precision-bg': '#00b5a4', '--button-scan-precision-hover-bg': '#00d4c2', '--button-scan-text': '#ffffff', '--button-danger-bg': '#b60045', '--button-danger-hover-bg': '#d60051', '--button-disabled-bg': '#333333', '--button-disabled-text': '#777777', '--input-bg': '#1f1f1f', '--progress-bar-bg': '#00e5ff', '--scrollbar-thumb-color': '#00e5ff', '--scrollbar-track-color': '#111111', '--severity-high-color': '#ff4d6d', '--severity-medium-color': '#ffaf00', '--severity-low-color': '#00e5ff', '--code-bg': 'rgba(0, 229, 255, 0.1)', '--code-text': '#ade8f4', '--link-color': '#00e5ff',
@@ -289,6 +290,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingThemeName = null; // To track if we are editing an existing theme
     let themeToRestore = 'Cojus';
 
+    // Helper to convert hex to RGB
+    const hexToRgb = (hex) => {
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+    };
+
     const applyTheme = (themeName) => {
         const allThemes = { ...themes, ...customThemes, ...sharedThemes };
         const themeObject = allThemes[themeName];
@@ -300,21 +309,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const themeProperties = themeObject.theme && typeof themeObject.theme === 'object' ? themeObject.theme : themeObject;
 
-        document.documentElement.style.cssText = '';
-        const themeCSSText = `:root { ${Object.entries(themeProperties).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
-        dynamicThemeStyles.textContent = themeCSSText;
+        // 기존 document.documentElement.style.cssText = ''; 제거 (필요하다면 다른 방식으로 초기화)
+        // dynamicThemeStyles.textContent = ''; // 또는 이 부분을 비워둡니다.
+
+        // 각 테마 속성을 document.documentElement (즉 :root)에 직접 CSS 변수로 설정
+        for (const key in themeProperties) {
+            if (themeProperties.hasOwnProperty(key)) {
+                document.documentElement.style.setProperty(key, themeProperties[key]);
+            }
+        }
         activeThemeName = themeName;
+
+        // Determine file list overlay color based on main background luminance
+        const mainBgColor = themeProperties['--main-bg'];
+        let overlayRgb = '0, 0, 0'; // Default to black for light backgrounds
+        if (mainBgColor) {
+            let r, g, b;
+            if (mainBgColor.startsWith('#')) {
+                const rgb = hexToRgb(mainBgColor);
+                if (rgb) [r, g, b] = rgb.split(',').map(Number);
+            } else if (mainBgColor.startsWith('rgb')) {
+                const match = mainBgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                if (match) [r, g, b] = match.slice(1).map(Number);
+            }
+
+            if (r !== undefined) {
+                // Calculate luminance (perceived brightness)
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                if (luminance > 0.5) { // If background is light, use dark overlay
+                    overlayRgb = '0, 0, 0';
+                } else { // If background is dark, use light overlay
+                    overlayRgb = '255, 255, 255';
+                }
+            }
+        }
+        document.documentElement.style.setProperty('--file-list-overlay-rgb', overlayRgb);
 
         // Special theme background handling
         document.body.classList.remove('cojus-special-background'); // Clean up old implementation
         document.body.style.backgroundImage = '';
 
-        if (themeObject.isSpecial && themeObject.background_image_url) {
+        const imageUrlToUse = themeObject.local_background_image_url || themeObject.background_image_url;
+
+        if (themeObject.isSpecial && imageUrlToUse) {
+            // Windows에서는 경로 구분자를 \로 사용해야 CSS에서 제대로 인식합니다.
+            const cssFriendlyUrl = imageUrlToUse.replace(/\\/g, '/');
+            document.documentElement.style.setProperty('--special-theme-bg-url', `url('file://${cssFriendlyUrl}')`);
             fileTreeContainer.classList.add('cojus-special-background');
-            fileTreeContainer.style.backgroundImage = `url('${themeObject.background_image_url}')`;
         } else {
+            document.documentElement.style.setProperty('--special-theme-bg-url', 'none');
             fileTreeContainer.classList.remove('cojus-special-background');
-            fileTreeContainer.style.backgroundImage = '';
         }
     };
 
@@ -625,6 +669,10 @@ document.addEventListener('DOMContentLoaded', () => {
             delete customThemes[themeName];
             await window.electronAPI.setSetting('customThemes', customThemes);
         } else if (themeType === 'shared') {
+            const themeToDelete = sharedThemes[themeName];
+            if (themeToDelete && themeToDelete.local_background_image_url) {
+                await window.electronAPI.deleteBackgroundImage(themeToDelete.local_background_image_url);
+            }
             delete sharedThemes[themeName];
             await window.electronAPI.setSetting('sharedThemes', sharedThemes);
         }
@@ -906,27 +954,43 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadBtn.textContent = translations[currentLang].downloading;
 
             try {
+                // 1. Download theme JSON file
                 const response = await fetch(jsonUrl);
                 if (!response.ok) throw new Error('Failed to download theme file.');
-                const themeFileData = await response.json(); // This is the content of the JSON file, e.g., { name, theme, isSpecial, ... }
+                const themeFileData = await response.json();
 
-                if (themeFileData.theme && typeof themeFileData.theme === 'object') {
-                    // Construct the complete theme object to be stored
-                    const themeToStore = {
-                        name: themeName,
-                        theme: themeFileData.theme,
-                        isSpecial: isSpecial,
-                        background_image_url: backgroundImageUrl || null
-                    };
-
-                    sharedThemes[themeName] = themeToStore;
-                    await window.electronAPI.setSetting('sharedThemes', sharedThemes);
-                    populateThemeDropdown();
-                    saveAndApplyTheme(themeName);
-                    themeStoreModal.classList.add('hidden');
-                } else {
+                if (!themeFileData.theme || typeof themeFileData.theme !== 'object') {
                     throw new Error('Invalid theme file format');
                 }
+
+                // 2. If it's a special theme, download the background image locally
+                let localBackgroundImageUrl = null;
+                if (isSpecial && backgroundImageUrl) {
+                    try {
+                        localBackgroundImageUrl = await window.electronAPI.downloadBackgroundImage(backgroundImageUrl);
+                    } catch (imgError) {
+                        console.error('Failed to download background image, proceeding without it:', imgError);
+                        // Optionally, inform the user that the background failed to download
+                    }
+                }
+
+                // 3. Construct the complete theme object to be stored
+                const themeToStore = {
+                    name: themeName,
+                    theme: themeFileData.theme,
+                    isSpecial: isSpecial,
+                    // Store both original and local URLs
+                    background_image_url: backgroundImageUrl || null,
+                    local_background_image_url: localBackgroundImageUrl
+                };
+
+                // 4. Save and apply the theme
+                sharedThemes[themeName] = themeToStore;
+                await window.electronAPI.setSetting('sharedThemes', sharedThemes);
+                populateThemeDropdown();
+                saveAndApplyTheme(themeName);
+                themeStoreModal.classList.add('hidden');
+
             } catch (error) {
                 console.error('Failed to download or apply theme:', error);
                 alert(error.message);
@@ -1994,7 +2058,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileContainer.className = 'mb-2 bg-[#111] rounded-lg overflow-hidden border border-[var(--border-color)]';
             const fileHeader = document.createElement('button');
             fileHeader.className = 'w-full text-left p-3 bg-[var(--button-secondary-bg)] hover:bg-[var(--button-secondary-hover-bg)] focus:outline-none flex justify-between items-center transition-colors';
-            fileHeader.innerHTML = `<span class="font-bold text-gray-100">${file}</span><span class="bg-[var(--button-danger-bg)] text-white text-xs font-bold mr-2 px-2.5 py-0.5 rounded-full">${findings.length} ${translations[currentLang].found}</span>`;
+            fileHeader.innerHTML = `<span class="font-bold" style="color: var(--text-color);">${file}</span><span class="bg-[var(--button-danger-bg)] text-white text-xs font-bold mr-2 px-2.5 py-0.5 rounded-full">${findings.length} ${translations[currentLang].found}</span>`;
             const findingsContainer = document.createElement('div');
             findingsContainer.className = 'p-4 hidden bg-[var(--secondary-bg)]';
             fileHeader.addEventListener('click', () => findingsContainer.classList.toggle('hidden'));

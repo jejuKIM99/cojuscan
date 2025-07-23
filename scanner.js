@@ -297,3 +297,29 @@ function scanContent(content) {
 }
 
 module.exports = { scanContent, vulnerabilityPatterns };
+
+
+const { execFile } = require('child_process');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const { app } = require('electron');
+
+const IS_WINDOWS = os.platform() === 'win32';
+
+// Production: In the packaged app, resources are in `process.resourcesPath`.
+// Development: In the project root, relative to `__dirname`.
+const basePath = app.isPackaged ? process.resourcesPath : __dirname;
+const SEMGREP_EXE = path.join(basePath, '.py-semgrep', 'Scripts', 'semgrep.exe');
+
+
+function getSemgrepExecutablePath() {
+    // 1. Check for the packaged Semgrep first.
+    if (fs.existsSync(SEMGREP_EXE)) {
+        return SEMGREP_EXE;
+    }
+
+    // 2. Fallback to checking the system's PATH.
+    // This is for users who might have installed it manually via `pip install semgrep`.
+    return 'semgrep';
+}
