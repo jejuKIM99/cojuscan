@@ -60,7 +60,7 @@ const vulnerabilityPatterns = [
         details: '무작위로 보이는 긴 문자열은 암호화 키나 비밀 토큰일 가능성이 높습니다. 코드에 직접 저장하는 것은 위험합니다.',
         details_en: 'A long, high-entropy string was detected. This may be a private key or an API key.',
         severity: 'High',
-        category: '보안', category_en: 'Security',
+        category: '보안', category_en: 'General',
         recommendation_ko: '이 문자열이 민감 정보라면, 환경 변수나 보안 스토어로 즉시 이동시키세요. 만약 해시 값이나 공개 키 등 비민감 정보라면 무시할 수 있습니다.',
         recommendation_en: 'If this string is sensitive, move it to an environment variable or a secret store immediately. You can ignore this if it is non-sensitive information like a hash or public key.'
     },
@@ -296,9 +296,6 @@ function scanContent(content) {
     return findings;
 }
 
-module.exports = { scanContent, vulnerabilityPatterns };
-
-
 const { execFile } = require('child_process');
 const path = require('path');
 const os = require('os');
@@ -323,3 +320,5 @@ function getSemgrepExecutablePath() {
     // This is for users who might have installed it manually via `pip install semgrep`.
     return 'semgrep';
 }
+
+module.exports = { scanContent, vulnerabilityPatterns, getSemgrepExecutablePath };
