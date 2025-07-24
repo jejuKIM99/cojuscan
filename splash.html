@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cojuscan Loading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #0D0D0D; /* Cojus theme main background color */
+            color: #E0E0E0; /* Cojus theme text color */
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .logo-container {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .logo {
+            max-width: 200px; /* Adjust as needed */
+            height: auto;
+            border-radius: 8px; /* Rounded corners for the image */
+        }
+        .loading-bar-container {
+            width: 80%;
+            max-width: 400px;
+            background-color: #1A1A1A; /* Cojus theme secondary background */
+            border-radius: 5px;
+            height: 10px;
+            overflow: hidden;
+            border: 1px solid #2a2a2a; /* Cojus theme border color */
+        }
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #00FF41; /* Cojus theme accent color */
+            border-radius: 5px;
+            transition: width 0.1s linear; /* Smooth transition for progress */
+        }
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #9ca3af; /* Cojus theme text-color-dark */
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-container">
+        <img src="../build/loading-logo.png" alt="Cojuscan Logo" class="logo">
+    </div>
+    <div class="loading-bar-container">
+        <div id="loading-bar" class="loading-bar"></div>
+    </div>
+    <div id="loading-text" class="loading-text">Loading... 0%</div>
+
+    <script>
+        // preload.js에서 노출된 electronAPI를 통해 메인 프로세스와 통신
+        window.addEventListener('DOMContentLoaded', () => {
+            window.electronAPI.onSplashProgress((progress, text) => {
+                const loadingBar = document.getElementById('loading-bar');
+                const loadingText = document.getElementById('loading-text');
+                loadingBar.style.width = `${progress}%`;
+                loadingText.textContent = `${text} ${Math.round(progress)}%`;
+            });
+        });
+    </script>
+</body>
+</html>

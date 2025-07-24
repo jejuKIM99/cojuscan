@@ -1,9 +1,9 @@
 // renderer.js
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Translations ---
+    // --- 번역 ---
     const translations = {
         ko: {
-            codeExplorer: "Code Explorer", selectDirectory: "디렉토리 선택", searchFilesPlaceholder: "파일 검색...", selectAll: "전체 선택", deselectAll: "전체 해제", selectProjectFolder: "프로젝트 폴더를 선택하세요.", vulnerabilityScan: "취약점 검사", startSimpleScan: "단순 검사", startPrecisionScan: "정밀 검사", progress: "진행률", startScanToSeeResults: "검사를 시작하여 취약점 결과를 확인하세요.", helpTitle: "도움말", detectableVulnerabilities: "탐지 가능 취약점 (단순 검사 기준)", clickVulnerabilityToSeeDetails: "왼쪽 목록에서 취약점 항목을 클릭하여 설명을 확인하세요.", supportedExtensions: "지원 확장자", scanInProgress: "검사 중...", scanComplete: "검사 완료", noVulnerabilitiesFound: "선택한 파일에서 취약점이 발견되지 않았습니다.", clean: "안전!", securityScore: "보안 점수", found: "개 발견", ignore: "무시", ignored: "무시됨", recommendation: "권장 사항", directoryLoadError: "디렉토리를 불러오지 못했습니다.", scanError: "스캔 중 오류 발생", semgrepNotFoundTitle: "Semgrep 설치 필요", semgrepNotFound: "정밀 검사를 사용하려면 Semgrep 엔진이 필요합니다. 시스템에 설치되어 있지 않은 것 같습니다.", semgrepInstallInstruction: "터미널에서 'python -m pip install semgrep' 명령어를 실행하여 설치하세요. 설치 후 프로그램을 다시 시작해야 할 수 있습니다.", exportReport: "보고서 출력", themeEditorTitle: "테마 편집기", themeNamePlaceholder: "테마 이름을 입력하세요", addTheme: "추가", close: "닫기", addCustomTheme: "커스텀 테마 추가", deleteTheme: "삭제", deleteConfirm: "정말 삭제하시겠습니까?", themeLimitError: "커스텀 테마는 최대 3개까지 저장할 수 있습니다. 기존 테마를 삭제해주세요.", themeNameExistsError: "같은 이름의 테마가 이미 존재합니다.", themeNameEmptyError: "테마 이름은 비워둘 수 없습니다.", hoverPreview: "호버", activePreview: "활성화", helpModalPreview: "도움말", urlModalPreview: "URL모달",
+            codeExplorer: "Code Explorer", selectDirectory: "디렉토리 선택", searchFilesPlaceholder: "파일 검색...", selectAll: "전체 선택", deselectAll: "전체 해제", selectProjectFolder: "프로젝트 폴더를 선택하세요.", vulnerabilityScan: "취약점 검사", startSimpleScan: "단순 검사", startPrecisionScan: "정밀 검사", progress: "진행률", startScanToSeeResults: "검사를 시작하여 취약점 결과를 확인하세요.", helpTitle: "도움말", detectableVulnerabilities: "탐지 가능 취약점 (단순 검사 기준)", clickVulnerabilityToSeeDetails: "왼쪽 목록에서 취약점 항목을 클릭하여 설명을 확인하세요.", supportedExtensions: "지원 확장자", scanInProgress: "검사 중... ", scanComplete: "검사 완료", noVulnerabilitiesFound: "선택한 파일에서 취약점이 발견되지 않았습니다.", clean: "안전!", securityScore: "보안 점수", found: "개 발견", ignore: "무시", ignored: "무시됨", recommendation: "권장 사항", directoryLoadError: "디렉토리를 불러오지 못했습니다.", scanError: "스캔 중 오류 발생", semgrepNotFoundTitle: "Semgrep 설치 필요", semgrepNotFound: "정밀 검사를 사용하려면 Semgrep 엔진이 필요합니다. 시스템에 설치되어 있지 않은 것 같습니다.", semgrepInstallInstruction: "터미널에서 'python -m pip install semgrep' 명령어를 실행하여 설치하세요. 설치 후 프로그램을 다시 시작해야 할 수 있습니다.", exportReport: "보고서 출력", themeEditorTitle: "테마 편집기", themeNamePlaceholder: "테마 이름을 입력하세요", addTheme: "추가", close: "닫기", addCustomTheme: "커스텀 테마 추가", deleteTheme: "삭제", deleteConfirm: "정말 삭제하시겠습니까?", themeLimitError: "커스텀 테마는 최대 3개까지 저장할 수 있습니다. 기존 테마를 삭제해주세요.", themeNameExistsError: "같은 이름의 테마가 이미 존재합니다.", themeNameEmptyError: "테마 이름은 비워둘 수 없습니다.", hoverPreview: "호버", activePreview: "활성화", helpModalPreview: "도움말", urlModalPreview: "URL모달",
             scanOptions: "검사 옵션", ignoreIntegrity: "리소스 무결성 검증 누락 무시", ignoreConsoleLogs: "console.log 경고 무시", ignoreCorsWildcard: "CORS 와일드카드 정책 무시",
             // URL Scan Translations
             startUrlScan: "URL 분석", urlScanTitle: "URL 취약점 분석", urlScanInfoTitle: "주의사항", urlScanInfoCase1Title: "✅ 분석 가능한 경우", urlScanInfoCase1Desc: "HTML, CSS, JavaScript 파일들이 서버에 개별 파일로 배포된 정적 웹사이트. (예: 순수 HTML/CSS/JS, Jekyll, Hugo 기반 사이트)", urlScanInfoCase2Title: "⚠️ 부분적으로 분석 가능한 경우", urlScanInfoCase2Desc: "리액트(React), Vue 등 빌드 과정을 거치는 사이트. 이 경우 빌드된 최종 JavaScript 파일 하나만 분석됩니다. 원본 소스 코드를 분석하려면 '디렉토리 선택' 기능을 사용하세요.", urlScanInfoReasonTitle: "이유", urlScanInfoReasonDesc: "URL 분석은 실제 사용자가 브라우저로 보는 배포된 파일들만 접근할 수 있습니다. 개발용 소스코드(`src` 폴더 등)는 서버에 배포되지 않으므로 URL로 직접 접근하여 분석할 수 없습니다.", urlScanStep1: "1단계: 분석 환경 준비", urlScanSubStep1Title: "메타태그 삽입", urlScanSubStep1Desc: "분석할 사이트의 &lt;head&gt; 태그 안에 아래 메타 태그를 추가하세요.", urlScanSubStep2Title: "cojuscan.js 생성", urlScanSubStep2Desc: "사이트의 루트 경로에 아래와 같이 폴더와 파일을 생성하세요.", urlScanSubStep3Title: "파일 경로 추가 및 배포", urlScanSubStep3Desc: "생성한 cojuscan.js 파일에 분석할 모든 파일의 경로를 추가하세요. 아래 형식들을 지원합니다.", copied: "복사되었습니다!", urlScanStep2: "2단계: URL 입력 및 검사", urlScanStep2Desc: "사이트 배포가 완료되었다면, 분석할 URL을 입력하고 검사를 시작하세요. (예: https://example.com)", startScanAction: "검사 시작", verificationFailed: "소유권 확인 실패. 메타 태그가 정확히 삽입되었는지 확인하세요.", urlFetchFailed: "URL을 가져올 수 없습니다. 주소를 확인하거나 서버 상태를 점검하세요.", invalidUrl: "유효한 URL을 입력해주세요. (https://로 시작)", cojuscanJsNotFound: "`cojuscan/cojuscan.js` 파일을 찾을 수 없습니다. 파일이 정확한 위치에 있고, 서버에서 접근 가능한지 확인하세요.", verifiedUrlListTitle: "검증된 URL 목록", noVerifiedUrls: "검증된 URL이 없습니다.", rescan: "재검사", urlScanResourcesTitle: "URL 분석 리소스", noAnalyzedResources: "분석된 리소스가 없습니다.",
@@ -27,6 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchingBranches: "브랜치 목록을 가져오는 중...",
             downloadingRepo: "레포지토리 다운로드 중...",
             githubAuthFailed: "GitHub 인증에 실패했습니다.",
+            // URL List Migration
+            migrateUrlsTitle: "기존 URL 목록 연동",
+            migrateUrlsDesc: "이전에 저장된 검증된 URL 목록이 있습니다. GitHub 계정에 연동하여 다른 컴퓨터에서도 사용할 수 있도록 하시겠습니까?",
+            migrateUrlsConfirm: "예, 연동합니다",
+            migrateUrlsCancel: "아니요, 나중에 할게요",
+            migrateUrlsSuccess: "URL 목록이 성공적으로 연동되었습니다!",
+            migrateUrlsError: "URL 목록 연동 중 오류가 발생했습니다.",
 
             // Theme Store
             themeStoreTitle: "테마 스토어",
@@ -55,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             confirm: "확인",
 
             themeVarGroups: {
-                "제목 표시줄": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "배경 & 테두리": ['--main-bg', '--secondary-bg', '--border-color'], "텍스트 & 링크": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "기본 버튼": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "검사 버튼": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL 검사 버튼": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL 모달": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI 컴포넌트": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "도움말 모달": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "상태 & 기타": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
+                "제목 표시줄": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "배경 & 테두리": ['--main-bg', '--secondary-bg', '--border-color'], "텍스트 & 링크": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "기본 버튼": ['--button-primary-bg', '--button-primary-hover-bg', '--button-primary-text', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "검사 버튼": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL 검사 버튼": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL 모달": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI 컴포넌트": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "도움말 모달": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "상태 & 기타": ['--button-disabled-bg', '--button-disabled-text', '--input-bg'],
             },
             themeVarNames: {
                 '--main-bg': '메인 배경', '--secondary-bg': '보조 배경', '--accent-color': '강조 색상', '--text-color': '기본 텍스트', '--text-color-dark': '보조 텍스트', '--border-color': '테두리', '--button-primary-bg': '주요 버튼', '--button-primary-hover-bg': '주요 버튼 (호버)', '--button-primary-text': '주요 버튼 텍스트', '--button-secondary-bg': '보조 버튼', '--button-secondary-hover-bg': '보조 버튼 (호버)', '--button-scan-simple-bg': '단순 검사 버튼', '--button-scan-simple-hover-bg': '단순 검사 (호버)', '--button-scan-precision-bg': '정밀 검사 버튼', '--button-scan-precision-hover-bg': '정밀 검사 (호버)', '--button-scan-text': '검사 버튼 텍스트', '--button-danger-bg': '위험 버튼', '--button-danger-hover-bg': '위험 버튼 (호버)', '--button-disabled-bg': '비활성 버튼', '--button-disabled-text': '비활성 버튼 텍스트', '--input-bg': '입력창 배경', '--progress-bar-bg': '진행률 바', '--scrollbar-thumb-color': '스크롤바 막대', '--scrollbar-track-color': '스크롤바 트랙', '--severity-high-color': '심각도 (높음)', '--severity-medium-color': '심각도 (중간)', '--severity-low-color': '심각도 (낮음)', '--code-bg': '코드 블록 배경', '--code-text': '코드 블록 텍스트', '--link-color': '링크 색상', '--help-modal-text-color': '도움말 모달 텍스트', '--help-modal-details-bg': '도움말 설명 배경', '--help-modal-details-text-color': '도움말 설명 텍스트', '--title-bar-bg': '제목 표시줄 배경', '--title-bar-text-color': '제목', '--title-bar-version-text-color': '버전 텍스트', '--title-bar-button-color': '버튼 아이콘', '--title-bar-button-hover-bg': '버튼 배경(호버)', '--title-bar-close-button-hover-bg': '닫기 버튼 배경(호버)', '--title-bar-close-button-hover-color': '닫기 버튼 아이콘(호버)', '--button-url-scan-bg': 'URL 검사 버튼', '--button-url-scan-hover-bg': 'URL 검사 (호버)', '--button-url-scan-text': 'URL 검사 텍스트', '--url-modal-border-color': 'URL 모달 테두리', '--url-modal-header-color': 'URL 모달 헤더', '--url-modal-progress-bar-bg': 'URL 모달 진행률 바',
@@ -86,6 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchingBranches: "Fetching branches...",
             downloadingRepo: "Downloading repository...",
             githubAuthFailed: "GitHub authentication failed.",
+            // URL List Migration
+            migrateUrlsTitle: "Migrate Existing URLs",
+            migrateUrlsDesc: "You have previously saved verified URLs. Would you like to migrate them to your GitHub account for use on other computers?",
+            migrateUrlsConfirm: "Yes, migrate them",
+            migrateUrlsCancel: "No, maybe later",
+            migrateUrlsSuccess: "URLs successfully migrated!",
+            migrateUrlsError: "An error occurred during URL migration.",
 
             // Theme Store
             themeStoreTitle: "Theme Store",
@@ -107,9 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadAndApply: "Download & Apply",
             downloading: "Downloading...",
             invalidFileType: "Invalid file type.",
+            searchPlaceholder: "Enter search term...",
+            title: "Title",
+            nickname: "Nickname",
+            passwordConfirmTitle: "Password Confirmation",
+            confirm: "Confirm",
 
             themeVarGroups: {
-                "Title Bar": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "Background & Borders": ['--main-bg', '--secondary-bg', '--border-color'], "Text & Links": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "Standard Buttons": ['--button-primary-bg', '--button-primary-hover-bg', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "Scan Buttons": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL Scan Buttons": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL Modal": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI Components": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "Help Modal": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "State & Misc": ['--button-disabled-bg', '--button-disabled-text', '--input-bg', '--button-primary-text'],
+                "Title Bar": ['--title-bar-bg', '--title-bar-text-color', '--title-bar-version-text-color', '--title-bar-button-color', '--title-bar-button-hover-bg', '--title-bar-close-button-hover-bg', '--title-bar-close-button-hover-color'], "Background & Borders": ['--main-bg', '--secondary-bg', '--border-color'], "Text & Links": ['--text-color', '--text-color-dark', '--accent-color', '--link-color'], "Standard Buttons": ['--button-primary-bg', '--button-primary-hover-bg', '--button-primary-text', '--button-secondary-bg', '--button-secondary-hover-bg', '--button-danger-bg', '--button-danger-hover-bg'], "Scan Buttons": ['--button-scan-simple-bg', '--button-scan-simple-hover-bg', '--button-scan-precision-bg', '--button-scan-precision-hover-bg', '--button-scan-text'], "URL Scan Buttons": ['--button-url-scan-bg', '--button-url-scan-hover-bg', '--button-url-scan-text'], "URL Modal": ['--url-modal-border-color', '--url-modal-header-color', '--url-modal-progress-bar-bg'], "UI Components": ['--progress-bar-bg', '--scrollbar-thumb-color', '--scrollbar-track-color', '--severity-high-color', '--severity-medium-color', '--severity-low-color', '--code-bg', '--code-text'], "Help Modal": ['--help-modal-text-color', '--help-modal-details-bg', '--help-modal-details-text-color'], "State & Misc": ['--button-disabled-bg', '--button-disabled-text', '--input-bg'],
             },
             themeVarNames: {
                 '--main-bg': 'Main BG', '--secondary-bg': 'Secondary BG', '--accent-color': 'Accent', '--text-color': 'Text', '--text-color-dark': 'Muted Text', '--border-color': 'Border', '--button-primary-bg': 'Primary Button', '--button-primary-hover-bg': 'Primary Button (Hover)', '--button-primary-text': 'Primary Button Text', '--button-secondary-bg': 'Secondary Button', '--button-secondary-hover-bg': 'Secondary Button (Hover)', '--button-scan-simple-bg': 'Simple Scan Button', '--button-scan-simple-hover-bg': 'Simple Scan (Hover)', '--button-scan-precision-bg': 'Precision Scan Button', '--button-scan-precision-hover-bg': 'Precision Scan (Hover)', '--button-scan-text': 'Scan Button Text', '--button-danger-bg': 'Danger Button', '--button-danger-hover-bg': 'Danger Button (Hover)', '--button-disabled-bg': 'Disabled Button', '--button-disabled-text': 'Disabled Button Text', '--input-bg': 'Input BG', '--progress-bar-bg': 'Progress Bar', '--scrollbar-thumb-color': 'Scrollbar Thumb', '--scrollbar-track-color': 'Scrollbar Track', '--severity-high-color': 'Severity (High)', '--severity-medium-color': 'Severity (Medium)', '--severity-low-color': 'Severity (Low)', '--code-bg': 'Code Block BG', '--code-text': 'Code Block Text', '--link-color': 'Link Color', '--help-modal-text-color': 'Modal Text', '--help-modal-details-bg': 'Modal Details BG', '--help-modal-details-text-color': 'Modal Details Text', '--title-bar-bg': 'Title Bar BG', '--title-bar-text-color': 'Title Text', '--title-bar-version-text-color': 'Version Text', '--title-bar-button-color': 'Button Icon', '--title-bar-button-hover-bg': 'Button BG (Hover)', '--title-bar-close-button-hover-bg': 'Close BG (Hover)', '--title-bar-close-button-hover-color': 'Close Icon (Hover)', '--button-url-scan-bg': 'URL Scan Button', '--button-url-scan-hover-bg': 'URL Scan (Hover)', '--button-url-scan-text': 'URL Scan Text', '--url-modal-border-color': 'URL Modal Border', '--url-modal-header-color': 'URL Modal Header', '--url-modal-progress-bar-bg': 'URL Modal Progress',
@@ -121,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let appInfo = null;
     let iconDataMap = {};
 
-    // --- Element Selectors ---
+    // --- 요소 선택자 ---
     const getEl = (id) => document.getElementById(id);
     const appVersionSpan = getEl('app-version');
     const maximizeIcon = getEl('maximize-icon');
@@ -146,14 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const deselectAllBtn = getEl('deselect-all-btn');
     const exportPdfBtn = getEl('export-pdf-btn');
 
-    // --- Scan Options Elements ---
+    // --- 스캔 옵션 요소 ---
     const scanOptionsToggle = getEl('scan-options-toggle');
     const scanOptionsDropdown = getEl('scan-options-dropdown');
     const ignoreIntegrityCheck = getEl('ignore-integrity-check');
     const ignoreConsoleLogCheck = getEl('ignore-console-log-check');
     const ignoreCorsWildcardCheck = getEl('ignore-cors-wildcard-check');
     
-    // --- URL Scan Elements ---
+    // --- URL 스캔 요소 ---
     const startUrlScanBtn = getEl('start-scan-url-btn');
     const urlScanModal = getEl('url-scan-modal');
     const closeUrlModalBtn = getEl('close-url-modal-btn');
@@ -174,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlScanInfoPanel = getEl('url-scan-info-panel');
     const urlScanMainContent = getEl('url-scan-main-content');
 
-    // --- GitHub Scan Elements (NEW) ---
+    // --- GitHub 스캔 요소 (신규) ---
     const selectGithubBtn = getEl('select-github-btn');
     const githubModal = getEl('github-modal');
     const closeGithubModalBtn = getEl('close-github-modal-btn');
@@ -195,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const githubNextStepBtn = getEl('github-next-step-btn');
     const githubImportBtn = getEl('github-import-btn');
     
-    // --- Theme Elements ---
+    // --- 테마 요소 ---
     const themeBtn = getEl('theme-btn');
     const themeDropdown = getEl('theme-dropdown');
     const dynamicThemeStyles = getEl('dynamic-theme-styles');
@@ -211,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlModalPreviewToggle = getEl('url-modal-preview-toggle');
     const themeEditorTitleEl = getEl('theme-editor-title');
 
-    // --- Theme Store Elements ---
+    // --- 테마 스토어 요소 ---
     const themeStoreBtn = getEl('theme-store-btn');
     const themeStoreModal = getEl('theme-store-modal');
     const closeThemeStoreBtn = getEl('close-theme-store-btn');
@@ -229,13 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeSearchInput = getEl('theme-search-input');
     const themeSearchBtn = getEl('theme-search-btn');
 
-    // --- Password Confirmation Modal Elements ---
+    // --- 비밀번호 확인 모달 요소 ---
     const passwordConfirmModal = getEl('password-confirm-modal');
     const closePasswordConfirmModalBtn = getEl('close-password-confirm-modal-btn');
     const passwordConfirmInput = getEl('password-confirm-input');
     const passwordConfirmErrorMessage = getEl('password-confirm-error-message');
     const passwordConfirmCancelBtn = getEl('password-confirm-cancel-btn');
     const passwordConfirmSubmitBtn = getEl('password-confirm-submit-btn');
+
+    // --- URL 마이그레이션 모달 요소 (신규) ---
+    const urlMigrationModal = getEl('url-migration-modal');
+    const migrateUrlsConfirmBtn = getEl('migrate-urls-confirm-btn');
+    const migrateUrlsCancelBtn = getEl('migrate-urls-cancel-btn');
 
     let projectPath = '';
     let currentScannedUrl = ''; 
@@ -247,17 +271,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let urlProgressUnsubscribe = null;
     let currentFileTree = null;
     let newUrlVerificationToken = '';
-    let verifiedUrls = [];
+    let verifiedUrls = []; // 로컬 저장소의 verifiedUrls
+    let githubUser = null; // GitHub 사용자 정보
 
-    // --- GitHub State (NEW) ---
+    // --- GitHub 상태 (신규) ---
     let githubCurrentStep = 1;
-    let githubUser = null;
     let githubRepos = [];
     let selectedRepo = null;
     let selectedBranch = null;
 
     // =================================================================
-    // THEME MANAGEMENT
+    // 테마 관리
     // =================================================================
     const themes = {
         Cojus: {
@@ -287,10 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let sharedThemes = {};
     let activeThemeName = 'Cojus';
     let isThemeEditMode = false;
-    let editingThemeName = null; // To track if we are editing an existing theme
+    let editingThemeName = null; // 현재 편집 중인 테마를 추적
     let themeToRestore = 'Cojus';
 
-    // Helper to convert hex to RGB
+    // 헥스 코드를 RGB로 변환하는 헬퍼 함수
     const hexToRgb = (hex) => {
         const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
         hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
@@ -302,15 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const allThemes = { ...themes, ...customThemes, ...sharedThemes };
         const themeObject = allThemes[themeName];
         if (!themeObject) {
-            console.error(`Theme "${themeName}" not found. Reverting to default.`);
+            console.error(`테마 "${themeName}"를 찾을 수 없습니다. 기본값으로 되돌립니다.`);
             applyTheme('Cojus');
             return;
         }
 
         const themeProperties = themeObject.theme && typeof themeObject.theme === 'object' ? themeObject.theme : themeObject;
-
-        // 기존 document.documentElement.style.cssText = ''; 제거 (필요하다면 다른 방식으로 초기화)
-        // dynamicThemeStyles.textContent = ''; // 또는 이 부분을 비워둡니다.
 
         // 각 테마 속성을 document.documentElement (즉 :root)에 직접 CSS 변수로 설정
         for (const key in themeProperties) {
@@ -320,9 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         activeThemeName = themeName;
 
-        // Determine file list overlay color based on main background luminance
+        // 메인 배경 밝기에 따라 파일 목록 오버레이 색상 결정
         const mainBgColor = themeProperties['--main-bg'];
-        let overlayRgb = '0, 0, 0'; // Default to black for light backgrounds
+        let overlayRgb = '0, 0, 0'; // 밝은 배경의 기본값은 검정
         if (mainBgColor) {
             let r, g, b;
             if (mainBgColor.startsWith('#')) {
@@ -334,19 +355,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (r !== undefined) {
-                // Calculate luminance (perceived brightness)
+                // 휘도 계산 (인지되는 밝기)
                 const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                if (luminance > 0.5) { // If background is light, use dark overlay
+                if (luminance > 0.5) { // 배경이 밝으면 어두운 오버레이 사용
                     overlayRgb = '0, 0, 0';
-                } else { // If background is dark, use light overlay
+                } else { // 배경이 어두우면 밝은 오버레이 사용
                     overlayRgb = '255, 255, 255';
                 }
             }
         }
         document.documentElement.style.setProperty('--file-list-overlay-rgb', overlayRgb);
 
-        // Special theme background handling
-        document.body.classList.remove('cojus-special-background'); // Clean up old implementation
+        // 특별 테마 배경 처리
+        document.body.classList.remove('cojus-special-background'); // 이전 구현 정리
         document.body.style.backgroundImage = '';
 
         const imageUrlToUse = themeObject.local_background_image_url || themeObject.background_image_url;
@@ -375,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
             themeDropdown.appendChild(hr);
         };
     
-        // Default themes
+        // 기본 테마
         Object.keys(themes).forEach(name => {
             const item = document.createElement('a');
             item.href = '#';
@@ -385,22 +406,22 @@ document.addEventListener('DOMContentLoaded', () => {
             themeDropdown.appendChild(item);
         });
     
-        // Custom themes
+        // 커스텀 테마
         if (Object.keys(customThemes).length > 0) {
             createSeparator();
             Object.keys(customThemes).forEach(name => {
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center text-sm text-[var(--text-color)] hover:bg-[var(--button-secondary-hover-bg)] group';
                 
-                // Animate long theme names
+                // 긴 테마 이름 애니메이션
                 const nameLink = document.createElement('a');
                 nameLink.href = '#';
-                // This 'a' tag acts as a container for the animation
+                // 이 'a' 태그는 애니메이션의 컨테이너 역할을 합니다.
                 nameLink.className = 'block py-2 px-4 theme-name-container';
-                nameLink.title = name; // Show full name on hover tooltip
+                nameLink.title = name; // 호버 툴팁에 전체 이름 표시
                 nameLink.addEventListener('click', (e) => { e.preventDefault(); saveAndApplyTheme(name); themeDropdown.classList.add('hidden'); });
 
-                // Inner span that holds the text and will be animated
+                // 텍스트를 담고 애니메이션될 내부 span
                 const nameText = document.createElement('span');
                 nameText.textContent = name;
                 nameText.className = 'theme-name-text';
@@ -408,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nameLink.appendChild(nameText);
     
                 const btnGroup = document.createElement('div');
-                // Ensure the button group does not get squished
+                // 버튼 그룹이 찌그러지지 않도록 보장
                 btnGroup.className = 'pr-2 flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0';
                 
                 const btnClasses = 'text-xs px-1.5 py-0.5 rounded mx-0.5';
@@ -429,13 +450,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 deleteBtn.onclick = (e) => { e.stopPropagation(); handleDeleteTheme(name, 'custom'); };
                 
                 btnGroup.append(editBtn, exportBtn, deleteBtn);
-                // Replace the old 'nameSpan' with the new 'nameLink'
+                // 이전 'nameSpan'을 새 'nameLink'로 교체
                 item.append(nameLink, btnGroup);
                 themeDropdown.appendChild(item);
             });
         }
     
-        // Shared themes
+        // 공유 테마
         if (Object.keys(sharedThemes).length > 0) {
             createSeparator();
             const title = document.createElement('div');
@@ -466,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         createSeparator();
         
-        // Action buttons
+        // 액션 버튼
         const addCustomBtn = document.createElement('a');
         addCustomBtn.href = '#';
         addCustomBtn.className = 'block px-4 py-2 text-sm text-[var(--accent-color)] hover:bg-[var(--button-secondary-hover-bg)]';
@@ -611,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     
-        if (!editingThemeName) { // Checks only for new themes
+        if (!editingThemeName) { // 새 테마에 대해서만 확인
             if (!name) { themeEditorMessage.textContent = translations[currentLang].themeNameEmptyError; return; }
             if (themes[name] || customThemes[name] || sharedThemes[name]) { themeEditorMessage.textContent = translations[currentLang].themeNameExistsError; return; }
             if (Object.keys(customThemes).length >= 3) { themeEditorMessage.textContent = translations[currentLang].themeLimitError; return; }
@@ -657,13 +678,15 @@ document.addEventListener('DOMContentLoaded', () => {
             await window.electronAPI.setSetting('sharedThemes', sharedThemes);
             alert(translations[currentLang].themeImportSuccess);
             populateThemeDropdown();
-        } else if (importedData !== null) { // Null means user canceled
+        } else if (importedData !== null) { // Null은 사용자가 취소했음을 의미
             alert(translations[currentLang].themeImportError);
         }
     };
 
     const handleDeleteTheme = async (themeName, themeType) => {
-        if (!confirm(`${themeName} ${translations[currentLang].deleteConfirm}`)) return;
+        // 커스텀 confirm 모달을 사용하도록 변경
+        const confirmDelete = await showConfirmModal(`${themeName} ${translations[currentLang].deleteConfirm}`);
+        if (!confirmDelete) return;
 
         if (themeType === 'custom') {
             delete customThemes[themeName];
@@ -757,7 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveThemeBtn.addEventListener('click', saveCustomTheme);
 
     // =================================================================
-    // THEME STORE
+    // 테마 스토어
     // =================================================================
     let activeThemeTab = 'cojustheme';
 
@@ -849,13 +872,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             themeStoreContent.appendChild(grid);
 
-            // Add event listeners for the new buttons
+            // 새 버튼에 이벤트 리스너 추가
             if (activeThemeTab === 'freetheme') {
                 themeStoreContent.querySelectorAll('.theme-actions-btn').forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const dropdown = button.closest('.group').querySelector('.theme-actions-dropdown');
-                        // Close all other open dropdowns
+                        // 다른 모든 열린 드롭다운 닫기
                         document.querySelectorAll('.theme-actions-dropdown').forEach(d => {
                             if (d !== dropdown) d.classList.add('hidden');
                         });
@@ -912,13 +935,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         e.stopPropagation();
                         const themeId = button.dataset.themeId;
                         const themeName = button.dataset.themeName;
-                        // Call a function to handle deletion with password confirmation
+                        // 비밀번호 확인 후 삭제 처리 함수 호출
                         promptPasswordAndExecute((password) => handleDeleteFreeTheme(themeId, themeName, password));
                         button.closest('.theme-actions-dropdown').classList.add('hidden');
                     });
                 });
 
-                // Close dropdowns when clicking anywhere else on the document
+                // 문서의 다른 곳을 클릭하면 드롭다운 닫기
                 document.addEventListener('click', (e) => {
                     if (!e.target.closest('.theme-actions-dropdown') && !e.target.closest('.theme-actions-btn')) {
                         document.querySelectorAll('.theme-actions-dropdown').forEach(d => d.classList.add('hidden'));
@@ -927,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (error) {
-            console.error('Error fetching themes:', error);
+            console.error('테마 가져오기 오류:', error);
             themeStoreContent.innerHTML = `<p class="text-red-400 text-center py-10">${error.message}</p>`;
         }
     };
@@ -954,37 +977,37 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadBtn.textContent = translations[currentLang].downloading;
 
             try {
-                // 1. Download theme JSON file
+                // 1. 테마 JSON 파일 다운로드
                 const response = await fetch(jsonUrl);
-                if (!response.ok) throw new Error('Failed to download theme file.');
+                if (!response.ok) throw new Error('테마 파일 다운로드 실패.');
                 const themeFileData = await response.json();
 
                 if (!themeFileData.theme || typeof themeFileData.theme !== 'object') {
-                    throw new Error('Invalid theme file format');
+                    throw new Error('잘못된 테마 파일 형식');
                 }
 
-                // 2. If it's a special theme, download the background image locally
+                // 2. 특별 테마인 경우 배경 이미지 로컬 다운로드
                 let localBackgroundImageUrl = null;
                 if (isSpecial && backgroundImageUrl) {
                     try {
                         localBackgroundImageUrl = await window.electronAPI.downloadBackgroundImage(backgroundImageUrl);
                     } catch (imgError) {
-                        console.error('Failed to download background image, proceeding without it:', imgError);
-                        // Optionally, inform the user that the background failed to download
+                        console.error('배경 이미지 다운로드 실패, 이미지 없이 진행:', imgError);
+                        // 선택적으로 사용자에게 배경 다운로드 실패를 알림
                     }
                 }
 
-                // 3. Construct the complete theme object to be stored
+                // 3. 저장할 전체 테마 객체 구성
                 const themeToStore = {
                     name: themeName,
                     theme: themeFileData.theme,
                     isSpecial: isSpecial,
-                    // Store both original and local URLs
+                    // 원본 및 로컬 URL 모두 저장
                     background_image_url: backgroundImageUrl || null,
                     local_background_image_url: localBackgroundImageUrl
                 };
 
-                // 4. Save and apply the theme
+                // 4. 테마 저장 및 적용
                 sharedThemes[themeName] = themeToStore;
                 await window.electronAPI.setSetting('sharedThemes', sharedThemes);
                 populateThemeDropdown();
@@ -992,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 themeStoreModal.classList.add('hidden');
 
             } catch (error) {
-                console.error('Failed to download or apply theme:', error);
+                console.error('테마 다운로드 또는 적용 실패:', error);
                 alert(error.message);
             } finally {
                 downloadBtn.disabled = false;
@@ -1019,20 +1042,20 @@ document.addEventListener('DOMContentLoaded', () => {
     closeThemeUploadBtn.addEventListener('click', () => themeUploadModal.classList.add('hidden'));
     cancelUploadBtn.addEventListener('click', () => themeUploadModal.classList.add('hidden'));
 
-    let currentEditingTheme = null; // To store the theme being edited
+    let currentEditingTheme = null; // 편집 중인 테마를 저장
 
     const openThemeUploadModalForEdit = (themeData, password = '') => {
         currentEditingTheme = { ...themeData, password: password };
         getEl('upload-theme-name').value = themeData.name;
         getEl('upload-nickname').value = themeData.nickname;
-        // Password and file inputs should not be pre-filled for security reasons
+        // 보안상의 이유로 비밀번호 및 파일 입력은 미리 채우지 않음
         getEl('upload-password').value = '';
-        getEl('upload-image-file').value = ''; // Clear file input
-        getEl('upload-json-file').value = ''; // Clear file input
+        getEl('upload-image-file').value = ''; // 파일 입력 지우기
+        getEl('upload-json-file').value = ''; // 파일 입력 지우기
 
-        // Change modal title and submit button text for editing
-        getEl('themeUploadTitle').textContent = translations[currentLang].editTheme; // Assuming you have this translation key
-        getEl('submit-upload-btn').textContent = translations[currentLang].saveChanges; // Assuming you have this translation key
+        // 편집을 위해 모달 제목 및 제출 버튼 텍스트 변경
+        getEl('themeUploadTitle').textContent = translations[currentLang].editTheme; // 이 번역 키가 있다고 가정
+        getEl('submit-upload-btn').textContent = translations[currentLang].saveChanges; // 이 번역 키가 있다고 가정
 
         themeUploadModal.classList.remove('hidden');
         uploadErrorMessage.textContent = '';
@@ -1043,12 +1066,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await window.electronAPI.deleteFreeTheme({ id: themeId, password: password });
             if (result.success) {
                 alert(`${themeName} 테마가 성공적으로 삭제되었습니다.`);
-                fetchAndDisplayThemes(); // Refresh the list
+                fetchAndDisplayThemes(); // 목록 새로고침
             } else {
                 throw new Error(result.message || '테마 삭제에 실패했습니다.');
             }
         } catch (error) {
-            console.error('Delete error:', error);
+            console.error('삭제 오류:', error);
             alert(`테마 삭제 중 오류 발생: ${error.message}`);
         }
     };
@@ -1065,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imageFile = getEl('upload-image-file').files[0];
         const jsonFile = getEl('upload-json-file').files[0];
 
-        if (!name || !nickname || !password) { // Files are optional for edit
+        if (!name || !nickname || !password) { // 편집 시 파일은 선택 사항
             uploadErrorMessage.textContent = '테마 이름, 닉네임, 비밀번호는 필수 입력입니다.';
             submitBtn.disabled = false;
             return;
@@ -1074,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             let result;
             if (currentEditingTheme) {
-                // Editing existing theme
+                // 기존 테마 편집
                 result = await window.electronAPI.updateFreeTheme({
                     id: currentEditingTheme.id,
                     name, nickname, password: currentEditingTheme.password,
@@ -1082,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     jsonFile: jsonFile ? { path: jsonFile.path, type: jsonFile.type } : null,
                 });
             } else {
-                // Uploading new theme
+                // 새 테마 업로드
                 if (!imageFile || !jsonFile) {
                     uploadErrorMessage.textContent = '새 테마 업로드 시에는 대표 이미지와 테마 파일이 필수입니다.';
                     submitBtn.disabled = false;
@@ -1098,19 +1121,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 alert(translations[currentLang].uploadSuccess);
                 themeUploadModal.classList.add('hidden');
-                fetchAndDisplayThemes(); // Refresh the list
+                fetchAndDisplayThemes(); // 목록 새로고침
             } else {
                 throw new Error(result.message || '업로드/수정 실패');
             }
         } catch (error) {
-            console.error('Upload/Edit error:', error);
+            console.error('업로드/편집 오류:', error);
             uploadErrorMessage.textContent = `${translations[currentLang].uploadError} ${error.message}`;
         } finally {
             submitBtn.disabled = false;
             // 수정 실패 시 상태를 초기화하지 않도록 수정
             if (!uploadErrorMessage.textContent || uploadErrorMessage.textContent.trim() === '') {
                 currentEditingTheme = null; // 성공 시에만 초기화
-                // Restore original modal title and button text
+                // 원래 모달 제목 및 버튼 텍스트 복원
                 getEl('themeUploadTitle').textContent = translations[currentLang].themeUploadTitle;
                 getEl('submit-upload-btn').textContent = translations[currentLang].submit;
             }
@@ -1130,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =================================================================
-    // PASSWORD CONFIRMATION MODAL
+    // 비밀번호 확인 모달
     // =================================================================
     let passwordConfirmCallback = null;
 
@@ -1170,8 +1193,127 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 커스텀 확인 모달 (네이티브 alert/confirm 대체)
+    const showConfirmModal = (message) => {
+        return new Promise(resolve => {
+            const modalHtml = `
+                <div id="custom-confirm-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+                    <div class="bg-[var(--secondary-bg)] rounded-lg shadow-lg p-6 w-full max-w-sm flex flex-col border-2 border-[var(--accent-color)]">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-[var(--accent-color)]">확인</h2>
+                            <button class="text-2xl text-[var(--text-color-dark)] hover:text-white close-btn">&times;</button>
+                        </div>
+                        <p class="text-[var(--text-color)] mb-6">${message}</p>
+                        <div class="flex justify-end space-x-2">
+                            <button class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg cancel-btn">취소</button>
+                            <button class="bg-[var(--button-primary-bg)] hover:bg-[var(--button-primary-hover-bg)] text-white font-bold py-2 px-4 rounded-lg confirm-btn">확인</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = getEl('custom-confirm-modal');
+
+            const cleanup = () => {
+                modal.remove();
+            };
+
+            modal.querySelector('.confirm-btn').addEventListener('click', () => {
+                resolve(true);
+                cleanup();
+            });
+            modal.querySelector('.cancel-btn').addEventListener('click', () => {
+                resolve(false);
+                cleanup();
+            });
+            modal.querySelector('.close-btn').addEventListener('click', () => {
+                resolve(false);
+                cleanup();
+            });
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    resolve(false);
+                    cleanup();
+                }
+            });
+        });
+    };
+
     // =================================================================
-    // LANGUAGE MANAGEMENT & INITIALIZATION
+    // URL 마이그레이션 모달
+    // =================================================================
+    const showUrlMigrationModal = () => {
+        urlMigrationModal.classList.remove('hidden');
+    };
+
+    const hideUrlMigrationModal = () => {
+        urlMigrationModal.classList.add('hidden');
+    };
+
+    migrateUrlsConfirmBtn.addEventListener('click', async () => {
+        hideUrlMigrationModal();
+        if (!githubUser) {
+            // GitHub 로그인이 안 되어 있으면 로그인 요청
+            const authConfirmed = await showConfirmModal(translations[currentLang].githubLogin);
+            if (authConfirmed) {
+                try {
+                    await window.electronAPI.startGitHubAuth();
+                    githubUser = await window.electronAPI.getGitHubUser(); // 다시 사용자 정보 가져오기
+                    if (githubUser) {
+                        await migrateLocalUrlsToSupabase(githubUser.id);
+                    } else {
+                        showConfirmModal(translations[currentLang].githubAuthFailed);
+                    }
+                } catch (error) {
+                    console.error('GitHub 인증 실패:', error);
+                    showConfirmModal(translations[currentLang].githubAuthFailed);
+                }
+            }
+        } else {
+            await migrateLocalUrlsToSupabase(githubUser.id);
+        }
+    });
+
+    migrateUrlsCancelBtn.addEventListener('click', () => {
+        hideUrlMigrationModal();
+        // 사용자가 마이그레이션을 취소해도 로컬 URL 목록은 유지
+        renderVerifiedUrlList();
+    });
+
+    const migrateLocalUrlsToSupabase = async (userId) => {
+        try {
+            for (const urlEntry of verifiedUrls) {
+                await window.electronAPI.addVerifiedUrl(userId, urlEntry.url, urlEntry.token);
+            }
+            // 마이그레이션 성공 후 로컬 저장소 비우기
+            verifiedUrls = [];
+            await window.electronAPI.setSetting('verifiedUrls', []);
+            await fetchVerifiedUrlsFromSupabase(); // Supabase에서 최신 목록 다시 불러오기
+            showConfirmModal(translations[currentLang].migrateUrlsSuccess);
+        } catch (error) {
+            console.error('URL 마이그레이션 중 오류 발생:', error);
+            showConfirmModal(`${translations[currentLang].migrateUrlsError}: ${error.message}`);
+        }
+    };
+
+    const fetchVerifiedUrlsFromSupabase = async () => {
+        if (githubUser) {
+            const result = await window.electronAPI.fetchVerifiedUrls(githubUser.id);
+            if (result.success) {
+                verifiedUrls = result.data;
+            } else {
+                console.error('Supabase에서 검증된 URL을 불러오는 데 실패했습니다:', result.message);
+                verifiedUrls = []; // 실패 시 목록 초기화
+            }
+        } else {
+            verifiedUrls = []; // GitHub 로그인 안 되어 있으면 비움
+        }
+        renderVerifiedUrlList();
+    };
+
+
+    // =================================================================
+    // 언어 관리 및 초기화
     // =================================================================
 
     const setLanguage = (lang) => {
@@ -1248,23 +1390,58 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedSharedThemes = getSettledValue(settingPromises[3]);
             const savedVerifiedUrls = getSettledValue(settingPromises[4]);
 
-            // ▼▼▼▼▼ 최종 핵심 수정 코드 ▼▼▼▼▼
             // 불러온 customThemes가 객체(Object)가 아니거나 null일 경우, 빈 객체로 강제 초기화하여 데이터 오염을 막습니다.
             if (typeof savedCustomThemes !== 'object' || savedCustomThemes === null || Array.isArray(savedCustomThemes)) {
                 console.log('손상된 customThemes 데이터를 감지하여 빈 객체로 초기화합니다.');
                 savedCustomThemes = {};
             }
-            // ▲▲▲▲▲ 여기까지 ▲▲▲▲▲
 
             // 2. 불러온 데이터로 전역 변수를 설정합니다.
             customThemes = savedCustomThemes; // 이제 항상 안전한 객체입니다.
             if (savedSharedThemes) sharedThemes = savedSharedThemes;
-            if (savedVerifiedUrls) verifiedUrls = savedVerifiedUrls;
             
             if (appInfo && appInfo.icons) iconDataMap = appInfo.icons;
             if (appInfo && appInfo.version) appVersionSpan.textContent = `v${appInfo.version}`;
 
-            // 3. UI를 그립니다.
+            // 3. GitHub 사용자 정보 로드 및 URL 목록 처리
+            githubUser = await window.electronAPI.getGitHubUser();
+
+            if (savedVerifiedUrls && savedVerifiedUrls.length > 0) {
+                // 기존 로컬 URL 목록이 존재하고 GitHub에 로그인되어 있지 않거나,
+                // GitHub에 로그인되어 있지만 아직 마이그레이션하지 않은 경우
+                if (!githubUser) {
+                    verifiedUrls = savedVerifiedUrls; // 로컬 목록 사용
+                    showUrlMigrationModal(); // 마이그레이션 여부 묻기
+                } else {
+                    // GitHub에 로그인되어 있으면 Supabase에서 URL 목록 가져오기 시도
+                    const result = await window.electronAPI.fetchVerifiedUrls(githubUser.id);
+                    if (result.success && result.data.length > 0) {
+                        verifiedUrls = result.data; // Supabase 목록 사용
+                        // 로컬 목록과 Supabase 목록이 다르면 마이그레이션 제안
+                        const localUrlsSet = new Set(savedVerifiedUrls.map(u => u.url));
+                        const supabaseUrlsSet = new Set(result.data.map(u => u.url));
+                        const needsMigration = savedVerifiedUrls.some(u => !supabaseUrlsSet.has(u.url));
+                        if (needsMigration) {
+                            showUrlMigrationModal();
+                        } else {
+                            // 로컬 목록이 Supabase 목록과 동일하거나 Supabase에 이미 다 있으면 로컬 목록 비우기
+                            await window.electronAPI.setSetting('verifiedUrls', []);
+                        }
+                    } else {
+                        // Supabase에 목록이 없으면 로컬 목록 사용 및 마이그레이션 제안
+                        verifiedUrls = savedVerifiedUrls;
+                        showUrlMigrationModal();
+                    }
+                }
+            } else if (githubUser) {
+                // 로컬 목록은 없지만 GitHub에 로그인되어 있으면 Supabase에서 목록 가져오기
+                await fetchVerifiedUrlsFromSupabase();
+            } else {
+                // 둘 다 없으면 빈 목록
+                verifiedUrls = [];
+            }
+            
+            // 4. UI를 그립니다.
             populateLangDropdown();
             
             const initialLang = savedLang || (appInfo?.locale?.startsWith('ko') ? 'ko' : 'en');
@@ -1285,7 +1462,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    // --- Window & UI Controls ---
+    // --- 창 및 UI 컨트롤 ---
     document.getElementById('minimize-btn').addEventListener('click', () => window.electronAPI.minimizeWindow());
     document.getElementById('maximize-btn').addEventListener('click', () => window.electronAPI.maximizeWindow());
     document.getElementById('close-btn').addEventListener('click', () => window.electronAPI.closeWindow());
@@ -1302,7 +1479,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Scan Options Dropdown ---
+    // --- 스캔 옵션 드롭다운 ---
     scanOptionsToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         langDropdown.classList.add('hidden');
@@ -1321,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ignoreConsoleLogCheck.addEventListener('change', refilterResults);
     ignoreCorsWildcardCheck.addEventListener('change', refilterResults);
 
-    // --- Help Modal ---
+    // --- 도움말 모달 ---
     const extColorMap = {
         'js|jsx|ts|tsx|vue|svelte': '#f0db4f', 'py|pyw': '#306998', 'java|kt|scala|groovy': '#b07219', 'cs|vb': '#68217a', 'c|cpp|h|hpp': '#00599c', 'go': '#00add8', 'rs': '#dea584', 'rb': '#cc342d', 'php': '#777bb4', 'html|htm': '#e34c26', 'css|scss|less|sass': '#264de4', 'sh|bash|zsh|ps1': '#4EAA25', 'sql': '#e38c00', 'json|yml|yaml|xml|toml': '#6b7280', 'tf|hcl|dockerfile': '#2396ed',
     };
@@ -1387,7 +1564,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
     helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.classList.add('hidden'); });
 
-    // --- URL Scan Modal Logic ---
+    // --- URL 스캔 모달 로직 ---
     urlScanInfoBtn.addEventListener('click', () => {
         urlScanInfoPanel.classList.toggle('w-1/3');
         urlScanInfoPanel.classList.toggle('w-0');
@@ -1444,7 +1621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const renderVerifiedUrlList = () => {
+    const renderVerifiedUrlList = async () => {
         verifiedUrlListContainer.innerHTML = '';
         if (verifiedUrls.length === 0) {
             verifiedUrlListContainer.innerHTML = `<p class="text-sm text-[var(--text-color-dark)] text-center py-4" data-i18n="noVerifiedUrls">${translations[currentLang].noVerifiedUrls}</p>`;
@@ -1474,10 +1651,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'text-xs bg-[var(--button-danger-bg)] hover:bg-[var(--button-danger-hover-bg)] px-2 py-1 rounded';
             deleteBtn.textContent = '×';
-            deleteBtn.onclick = () => {
-                verifiedUrls = verifiedUrls.filter(u => u.url !== itemData.url);
-                window.electronAPI.setSetting('verifiedUrls', verifiedUrls);
-                renderVerifiedUrlList();
+            deleteBtn.onclick = async () => {
+                const confirmDelete = await showConfirmModal(`'${itemData.url}' ${translations[currentLang].deleteConfirm}`);
+                if (confirmDelete) {
+                    if (githubUser) {
+                        const result = await window.electronAPI.deleteVerifiedUrl(itemData.id);
+                        if (result.success) {
+                            verifiedUrls = verifiedUrls.filter(u => u.id !== itemData.id);
+                        } else {
+                            console.error('URL 삭제 실패:', result.message);
+                            alert('URL 삭제에 실패했습니다.');
+                        }
+                    } else {
+                        verifiedUrls = verifiedUrls.filter(u => u.url !== itemData.url);
+                        await window.electronAPI.setSetting('verifiedUrls', verifiedUrls);
+                    }
+                    renderVerifiedUrlList();
+                }
             };
             
             btnGroup.append(rescanBtn, deleteBtn);
@@ -1497,6 +1687,11 @@ document.addEventListener('DOMContentLoaded', () => {
         urlScanStartBtn.disabled = true;
         startSimpleScanBtn.disabled = true;
         startPrecisionScanBtn.disabled = true;
+        startUrlScanBtn.disabled = true; // URL 스캔 중에는 URL 스캔 버튼도 비활성화
+        selectDirBtn.disabled = true;
+        selectGithubBtn.disabled = true;
+        fileTreeContainer.style.pointerEvents = 'none';
+
         urlScanProgressContainer.classList.remove('hidden');
 
         if (urlProgressUnsubscribe) urlProgressUnsubscribe();
@@ -1521,8 +1716,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const results = await window.electronAPI.startUrlScan(url, tokenToSend);
             
             if (isNewVerification) {
-                verifiedUrls.push({ url: url, token: tokenToSend });
-                window.electronAPI.setSetting('verifiedUrls', verifiedUrls);
+                if (githubUser) {
+                    const addResult = await window.electronAPI.addVerifiedUrl(githubUser.id, url, tokenToSend);
+                    if (addResult.success) {
+                        verifiedUrls.push(addResult.data);
+                    } else {
+                        console.error('Supabase에 URL 추가 실패:', addResult.message);
+                    }
+                } else {
+                    verifiedUrls.push({ url: url, token: tokenToSend });
+                    await window.electronAPI.setSetting('verifiedUrls', verifiedUrls);
+                }
                 renderVerifiedUrlList(); 
             }
 
@@ -1541,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             urlScanModal.classList.add('hidden');
         } catch (error) {
-            console.error('URL Scan error:', error);
+            console.error('URL 스캔 오류:', error);
             if (error.message.includes('VERIFICATION_FAILED')) {
                 urlScanErrorMessage.textContent = translations[currentLang].verificationFailed;
             } else if (error.message.includes('URL_FETCH_FAILED')) {
@@ -1552,7 +1756,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 urlScanErrorMessage.textContent = translations[currentLang].scanError;
             }
         } finally {
-            updateScanButtonState();
+            // 스캔 완료 후 모든 버튼과 UI 요소를 다시 활성화
+            urlScanStartBtn.disabled = false;
+            startSimpleScanBtn.disabled = false;
+            startPrecisionScanBtn.disabled = false;
+            startUrlScanBtn.disabled = false;
+            selectDirBtn.disabled = false;
+            selectGithubBtn.disabled = false;
+            fileTreeContainer.style.pointerEvents = 'auto';
+
+            updateScanButtonState(); // 파일 선택 상태에 따라 스캔 버튼 활성화 여부 업데이트
             if (urlProgressUnsubscribe) {
                 urlProgressUnsubscribe();
                 urlProgressUnsubscribe = null;
@@ -1562,7 +1775,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     urlScanStartBtn.addEventListener('click', handleUrlScan);
     
-    // --- GITHUB MODAL LOGIC (NEW) ---
+    // --- GITHUB 모달 로직 (신규) ---
     const resetGitHubModal = () => {
         githubCurrentStep = 1;
         selectedRepo = null;
@@ -1634,6 +1847,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await window.electronAPI.startGitHubAuth();
             await updateGitHubUserState();
+            // GitHub 인증 성공 후 URL 목록 다시 불러오기
+            await fetchVerifiedUrlsFromSupabase();
         } catch (error) {
             console.error(error);
             alert(translations[currentLang].githubAuthFailed);
@@ -1645,6 +1860,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await window.electronAPI.logoutGitHub();
         githubUser = null;
         await updateGitHubUserState();
+        // GitHub 로그아웃 후 로컬 URL 목록으로 전환
+        verifiedUrls = await window.electronAPI.getSetting('verifiedUrls') || [];
+        renderVerifiedUrlList();
     });
 
     githubNextStepBtn.addEventListener('click', async () => {
@@ -1688,9 +1906,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await window.electronAPI.importGitHubRepo(selectedRepo, selectedBranch);
             if (data && data.tree) {
-                // Use repo name for display, temp path for scanning
+                // 표시용으로 레포 이름 사용, 스캔용으로 임시 경로 사용
                 projectPath = data.path; 
-                currentScannedUrl = data.repoName; // Use for report title
+                currentScannedUrl = data.repoName; // 보고서 제목용으로 사용
 
                 currentFileTree = data.tree;
                 fileTreeContainer.innerHTML = '';
@@ -1704,7 +1922,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error(error);
-            alert('Failed to import repository.');
+            alert('저장소 가져오기 실패.');
         } finally {
             if (progressUnsubscribe) {
                 progressUnsubscribe();
@@ -1758,7 +1976,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- Core App Logic ---
+    // --- 핵심 앱 로직 ---
     const restoreUIState = () => {
         progressBar.style.width = '0%';
         progressText.textContent = '0%';
@@ -1961,7 +2179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startPrecisionScanBtn.disabled = true;
         startUrlScanBtn.disabled = true;
         selectDirBtn.disabled = true;
-        selectGithubBtn.disabled = true; // Disable GitHub button during scan
+        selectGithubBtn.disabled = true;
         fileTreeContainer.style.pointerEvents = 'none';
 
         resultsContainer.innerHTML = `<p class="text-[var(--text-color-dark)] text-center py-10 animate-pulse">${translations[currentLang].scanInProgress}</p>`;
@@ -1975,7 +2193,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         try {
-            // Do not clear currentScannedUrl here for GitHub scans
+            // GitHub 스캔의 경우 currentScannedUrl을 지우지 않음
             let results;
             if (scanType === 'simple') {
                 results = await window.electronAPI.startSimpleScan({ projectPath, filesToScan: checkedFiles });
@@ -1988,7 +2206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 exportPdfBtn.classList.remove('hidden');
             }
         } catch (error) {
-            console.error('Scan error:', error);
+            console.error('스캔 오류:', error);
             if (error.message === 'SEMGREP_NOT_FOUND') {
                 resultsContainer.innerHTML = `
                     <div class="text-center py-10 px-4">
@@ -2003,7 +2221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } finally {
             selectDirBtn.disabled = false;
-            selectGithubBtn.disabled = false; // Re-enable GitHub button
+            selectGithubBtn.disabled = false; // GitHub 버튼 다시 활성화
             fileTreeContainer.style.pointerEvents = 'auto';
             updateScanButtonState();
             progressText.textContent = translations[currentLang].scanComplete;
@@ -2064,7 +2282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileHeader.addEventListener('click', () => findingsContainer.classList.toggle('hidden'));
             findings.forEach((finding) => {
                 const findingId = `${file}-${finding.line}-${finding.id}`;
-                const findingCard = document.createElement('div');
+                findingCard = document.createElement('div');
                 findingCard.id = findingId;
                 findingCard.dataset.severity = finding.severity;
                 const severityStyles = { High: { border: 'border-[var(--severity-high-color)]', bg: 'bg-[var(--severity-high-color)]' }, Medium: { border: 'border-[var(--severity-medium-color)]', bg: 'bg-[var(--severity-medium-color)]' }, Low: { border: 'border-[var(--severity-low-color)]', bg: 'bg-[var(--severity-low-color)]' } };
@@ -2152,7 +2370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // --- Run Initialization ---
+    // --- 초기화 실행 ---
     initializeApp();
     window.electronAPI.onGetRendererState(() => {
         console.log('메인 프로세스로부터 상태 저장 요청을 받았습니다. 현재 상태를 전송합니다.');
@@ -2162,7 +2380,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activeTheme: activeThemeName,
             customThemes: customThemes,
             sharedThemes: sharedThemes,
-            verifiedUrls: verifiedUrls
+            verifiedUrls: verifiedUrls // verifiedUrls도 저장 상태에 포함
             // 필요하다면 다른 설정 값들도 추가할 수 있습니다.
         };
         // 수집한 상태 객체를 메인 프로세스로 보냅니다.

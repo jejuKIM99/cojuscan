@@ -28,13 +28,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Return a function to remove the listener
     return () => ipcRenderer.removeListener('url-scan:progress', listener);
   },
-
-  // --- GitHub Functionality (NEW) ---
+  addVerifiedUrl: (userId, url, token) => ipcRenderer.invoke('url:verified:add', { userId, url, token }),
+  deleteVerifiedUrl: (id) => ipcRenderer.invoke('url:verified:delete', id),
+  // GitHub 인증 및 저장소 관리 (신규)
   startGitHubAuth: () => ipcRenderer.invoke('github:auth:start'),
   getGitHubUser: () => ipcRenderer.invoke('github:user:get'),
   logoutGitHub: () => ipcRenderer.invoke('github:auth:logout'),
   getGitHubRepos: () => ipcRenderer.invoke('github:repos:get'),
-  getGitHubBranches: (repo) => ipcRenderer.invoke('github:branches:get', repo),
+  getGitHubBranches: (repoFullName) => ipcRenderer.invoke('github:branches:get', repoFullName),
   importGitHubRepo: (repo, branch) => ipcRenderer.invoke('github:repo:import', { repo, branch }),
 
   // --- App Info ---
@@ -57,9 +58,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uploadTheme: (data) => ipcRenderer.invoke('theme-store:upload', data),
   deleteFreeTheme: (data) => ipcRenderer.invoke('theme-store:delete-free', data),
   updateFreeTheme: (themeData) => ipcRenderer.invoke('theme-store:update-free', themeData),
-    downloadBackgroundImage: (imageUrl) => ipcRenderer.invoke('theme:download-background-image', imageUrl),
-    deleteBackgroundImage: (fileUrl) => ipcRenderer.invoke('theme:delete-background-image', fileUrl),
+  downloadBackgroundImage: (imageUrl) => ipcRenderer.invoke('theme:download-background-image', imageUrl),
+  deleteBackgroundImage: (fileUrl) => ipcRenderer.invoke('theme:delete-background-image', fileUrl),
 
+  // --- Renderer State for Quit ---
   onGetRendererState: (callback) => ipcRenderer.on('get-renderer-state', callback),
   sendRendererStateForQuit: (state) => ipcRenderer.send('renderer-state-for-quit', state),
+
+  // --- URL 목록 가져오기 (신규) ---
+  fetchVerifiedUrls: (userId) => ipcRenderer.invoke('url:verified:fetch', userId),
+
+  // --- Splash Screen Progress (신규) ---
+  onSplashProgress: (callback) => ipcRenderer.on('splash-progress', (event, progress, text) => callback(progress, text)),
 });

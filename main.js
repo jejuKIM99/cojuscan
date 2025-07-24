@@ -1,6 +1,6 @@
 // main.js
 const { app, BrowserWindow, ipcMain, dialog, net, shell } = require('electron');
-const path =require('path');
+const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
@@ -8,12 +8,15 @@ const { spawn } = require('child_process');
 const { URL } = require('url');
 const { createClient } = require('@supabase/supabase-js');
 const Store = require('electron-store');
-const { scanContent, vulnerabilityPatterns } = require('./scanner.js');
+const { scanContent, vulnerabilityPatterns, getSemgrepExecutablePath } = require('./scanner.js');
 const os = require('os');
 const crypto = require('crypto');
+const { Octokit } = require('@octokit/rest'); // Octokit 추가
 
 const gotTheLock = app.requestSingleInstanceLock();
 let mainWindow;
+let splashWindow; // 스플래시 화면 창
+let githubAuthWindow = null; // GitHub OAuth 팝업 창 참조
 
 if (!gotTheLock) {
   app.quit();
@@ -34,7 +37,7 @@ const store = new Store();
 
 // Supabase Client
 const supabaseUrl = 'https://gxjznorcwnqajdotlmxv.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4anpub3Jjd25xYWpkb3RsbXh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2Mzc2MjIsImV4cCI6MjA2MzIxMzYyMn0.kuOuJzp-DcDDEIfQ3sMZDi0b0447U_VCQrWZcj-UWsE';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4anpub3Jjd25xYWpkb3RsbXh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2Mzc2MjIsImV4cCI6MjA2MzIxMzYyMn0.kuOuJzp-DcDDEIfQ3sMZDi0b0447U_VCQrWZcj-UWsE'; // 여기에 실제 Supabase Anon Key를 입력하세요.
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 이 Client ID는 프록시 서버의 환경 변수에 설정되므로, 여기서도 일치시켜주는 것이 좋습니다.
@@ -134,7 +137,7 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
         if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
         
         // Use the globally defined semgrepExecutable
-        const semgrep = spawn(semgrepExecutable, args, { cwd: projectPath });
+        const semgrep = spawn(getSemgrepExecutablePath(), args, { cwd: projectPath });
         
         semgrep.on('error', (err) => {
             if (err.code === 'ENOENT') {
@@ -234,6 +237,14 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
             });
         }
 
+// 스플래시 화면 로딩 진행률을 렌더러 프로세스로 전송하는 함수
+const sendSplashProgress = (progress, text) => {
+    if (splashWindow && !splashWindow.isDestroyed()) {
+        splashWindow.webContents.send('splash-progress', progress, text);
+    }
+};
+
+// 메인 창 생성 함수
 const createWindow = () => {
     mainWindow = new BrowserWindow({
         width: 1400,
@@ -249,10 +260,17 @@ const createWindow = () => {
             contextIsolation: true,
             nodeIntegration: false,
         },
-        show: false,
+        show: false, // 메인 창은 스플래시 화면이 사라진 후에 표시
     });
   
-    mainWindow.once('ready-to-show', () => mainWindow.show());
+    // 메인 창이 준비되면 스플래시 창을 닫고 메인 창을 표시
+    // 'ready-to-show' 이벤트 리스너를 사용하여 플리커링을 방지합니다.
+    mainWindow.once('ready-to-show', () => {
+        if (splashWindow) {
+            splashWindow.destroy(); // 스플래시 창 닫기
+        }
+        mainWindow.show(); // 메인 창을 표시합니다.
+    });
 
     ipcMain.on('minimize-window', () => mainWindow.minimize());
     ipcMain.on('maximize-window', () => {
@@ -261,13 +279,10 @@ const createWindow = () => {
     });
     ipcMain.on('close-window', () => mainWindow.close());
     mainWindow.on('maximize', () => mainWindow.webContents.send('window-maximized'));
-    mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-unmaximized'));
+    mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-unmaximize'));
 
     let githubAccessToken = null;
     
-    // =================================================================
-    // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 시작 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-    // =================================================================
     let isAuthInProgress = false; // 인증 진행 상태를 추적하는 잠금 변수
 
     function base64URLEncode(str) {
@@ -356,9 +371,6 @@ const createWindow = () => {
             }, 300000); 
         });
     });
-    // =================================================================
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 수정된 부분 끝 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-    // =================================================================
     
     ipcMain.handle('github:user:get', async () => {
         if (!githubAccessToken) {
@@ -435,7 +447,8 @@ const createWindow = () => {
             currentWindow.webContents.send('scan:progress', { progress: 25, file: '파일 목록 가져오는 중...' });
             const treeResponse = await net.fetch(`https://api.github.com/repos/${repo.full_name}/git/trees/${treeSha}?recursive=1`, { headers: { 'Authorization': `token ${githubAccessToken}` } });
             if (!treeResponse.ok) throw new Error('Could not fetch file tree.');
-            const treeData = await treeResponse.json();
+            // treeResponse.json()의 결과를 treeData 변수에 할당합니다.
+            const treeData = await treeResponse.json(); 
     
             const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico']);
             const videoExtensions = new Set(['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm']);
@@ -549,13 +562,13 @@ const createWindow = () => {
             const totalFiles = fileList.length;
 
             for (let i = 0; i < totalFiles; i++) {
-                const filePath = fileList[i];
+                const file = fileList[i]; // 'file' 변수 사용
                 const progress = 60 + Math.round(((i + 1) / totalFiles) * 40);
-                const resultKey = path.basename(filePath);
+                const resultKey = path.basename(file); // 'file' 변수 사용
                 sendProgress(progress, `${resultKey} 분석 중...`);
 
                 try {
-                    const fileUrl = new URL(filePath, mainUrl.href).href;
+                    const fileUrl = new URL(file, mainUrl.href).href; // 'file' 변수 사용
                     const fileContent = await new Promise((resolve, reject) => {
                         const request = net.request({ url: fileUrl });
                         let body = '';
@@ -570,17 +583,17 @@ const createWindow = () => {
                     
                     const findings = scanContent(fileContent);
                     if (findings.length > 0) {
-                        if (!results[filePath]) results[filePath] = [];
-                        results[filePath].push(...findings);
+                        if (!results[file]) results[file] = []; // 'file' 변수 사용
+                        results[file].push(...findings); // 'file' 변수 사용
                     }
                 } catch(e) {
-                    console.error(`'${filePath}' 파일 분석 실패:`, e.message);
-                    if (!results[filePath]) results[filePath] = [];
-                    results[filePath].push({
+                    console.error(`'${file}' 파일 분석 실패:`, e.message); // 'file' 변수 사용
+                    if (!results[file]) results[file] = []; // 'file' 변수 사용
+                    results[file].push({ // 'file' 변수 사용
                         id: 'fetch-error',
                         name: '파일 로드 실패', name_en: 'File Load Failed',
-                        description: `'${filePath}' 파일의 내용을 가져올 수 없습니다. 경로를 확인하세요.`,
-                        description_en: `Could not fetch content for '${filePath}'. Check the path.`,
+                        description: `'${file}' 파일의 내용을 가져올 수 없습니다. 경로를 확인하세요.`, // 'file' 변수 사용
+                        description_en: `Could not fetch content for '${file}'. Check the path.`, // 'file' 변수 사용
                         severity: 'Low', line: 1, code: e.message
                     });
                 }
@@ -594,6 +607,50 @@ const createWindow = () => {
             if (hiddenWin && !hiddenWin.isDestroyed()) {
                 hiddenWin.close();
             }
+        }
+    });
+
+    // Supabase를 통한 verified_urls 관리
+    ipcMain.handle('url:verified:fetch', async (event, userId) => {
+        try {
+            const { data, error } = await supabase
+                .from('verified_urls')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return { success: true, data };
+        } catch (error) {
+            console.error('Error fetching verified URLs:', error);
+            return { success: false, message: error.message };
+        }
+    });
+
+    ipcMain.handle('url:verified:add', async (event, { userId, url, token }) => {
+        try {
+            const { data, error } = await supabase
+                .from('verified_urls')
+                .insert([{ user_id: userId, url, token }])
+                .select();
+            if (error) throw error;
+            return { success: true, data: data[0] };
+        } catch (error) {
+            console.error('Error adding verified URL:', error);
+            return { success: false, message: error.message };
+        }
+    });
+
+    ipcMain.handle('url:verified:delete', async (event, id) => {
+        try {
+            const { error } = await supabase
+                .from('verified_urls')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Error deleting verified URL:', error);
+            return { success: false, message: error.message };
         }
     });
 
@@ -914,8 +971,38 @@ const createWindow = () => {
         }
         return { success: false };
     });
+}; // End of createWindow function
 
-    mainWindow.loadFile('index.html');
+// 스플래시 창 생성 함수
+const createSplashWindow = () => {
+    splashWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        transparent: false, // 투명 배경 비활성화
+        frame: false, // 프레임 제거
+        alwaysOnTop: true, // 항상 위에 표시
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+        }
+    });
+
+    splashWindow.loadFile('splash.html');
+    splashWindow.on('closed', () => (splashWindow = null));
+    
+    // 스플래시 화면이 완전히 로드되면 메인 창 로딩 시작
+    splashWindow.webContents.on('did-finish-load', async () => {
+        sendSplashProgress(10, '앱 초기화 중...');
+        // 여기에서 필요한 초기화 작업을 수행하거나 진행률을 업데이트할 수 있습니다.
+        // 예를 들어, 데이터베이스 연결, 설정 로드 등
+        await new Promise(resolve => setTimeout(resolve, 500)); // 시뮬레이션 지연
+
+        sendSplashProgress(50, '메인 화면 로드 중...');
+        // 메인 창의 index.html 로드를 시작합니다.
+        // mainWindow가 이미 생성되었지만, loadFile은 아직 호출되지 않았습니다.
+        mainWindow.loadFile('index.html');
+    });
 };
 
 let isQuitting = false;
@@ -958,6 +1045,19 @@ app.on('before-quit', (event) => {
     }, 5000);
 });
 
-app.whenReady().then(createWindow);
-app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
-app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+app.whenReady().then(() => {
+    createSplashWindow(); // 앱 시작 시 스플래시 창 먼저 생성
+    createWindow(); // 메인 창은 백그라운드에서 생성
+});
+
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});
