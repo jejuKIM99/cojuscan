@@ -17,12 +17,51 @@ const vulnerabilityPatterns = [
         recommendation_en: 'Use parameterized queries (Prepared Statements) or an ORM to safely separate user input from the query.'
     },
     {
+        id: 'python_sql_injection',
+        semgrepId: 'python.lang.security.audit.sql-injection.sql-injection',
+        name: 'Python SQL 인젝션', name_en: 'Python SQL Injection',
+        pattern: null, // Semgrep ID로 매칭되므로 패턴은 필요 없음
+        description: 'Python 애플리케이션에서 SQL 인젝션 취약점이 발견되었습니다.',
+        details: '사용자 입력이 SQL 쿼리에 직접 사용되어 악의적인 SQL 코드가 실행될 수 있습니다.',
+        details_en: 'SQL injection vulnerability found in Python application. Malicious SQL code can be executed if user input is directly used in SQL queries.',
+        severity: 'High',
+        category: '백엔드', category_en: 'Backend',
+        recommendation_ko: '파라미터화된 쿼리 또는 ORM을 사용하여 SQL 쿼리를 안전하게 구성하세요.',
+        recommendation_en: 'Use parameterized queries or ORM to safely construct SQL queries.'
+    },
+    {
+        id: 'python_command_injection',
+        semgrepId: 'python.lang.security.audit.command-injection.command-injection',
+        name: 'Python 커맨드 인젝션', name_en: 'Python Command Injection',
+        pattern: null,
+        description: 'Python 애플리케이션에서 커맨드 인젝션 취약점이 발견되었습니다.',
+        details: '사용자 입력이 쉘 명령에 직접 사용되어 임의의 시스템 명령이 실행될 수 있습니다.',
+        details_en: 'Command injection vulnerability found in Python application. Arbitrary system commands can be executed if user input is directly used in shell commands.',
+        severity: 'High',
+        category: '백엔드', category_en: 'Backend',
+        recommendation_ko: '사용자 입력을 쉘 명령에 직접 사용하지 말고, 필요한 경우 안전하게 이스케이프 처리하거나 화이트리스트 기반으로 검증하세요.',
+        recommendation_en: 'Avoid using user input directly in shell commands. If necessary, safely escape or validate input using a whitelist approach.'
+    },
+    {
         id: 'hardcoded_secret',
         name: '하드코딩된 비밀 정보', name_en: 'Hardcoded Secrets',
         pattern: /(api_key|secret|password|token|auth_key|credentials|aws_access_key_id|client_secret)['"]?\s*[:=]\s*['"`][a-zA-Z0-9\-_/.@+]{16,}['"`]/i,
         description: 'API 키, 비밀번호 등 민감한 정보가 소스 코드에 하드코딩되어 있습니다.',
         details: '소스 코드는 버전 관리 시스템 등을 통해 외부에 노출될 수 있으므로, 민감한 정보를 직접 코드에 작성하는 것은 매우 위험합니다.',
         details_en: 'Hardcoding sensitive information is extremely risky as source code can be exposed through version control systems.',
+        severity: 'High',
+        category: '일반', category_en: 'General',
+        recommendation_ko: '환경 변수, Docker Secrets, 또는 HashiCorp Vault와 같은 보안 저장소를 사용하여 민감한 정보를 코드와 분리하여 관리하세요.',
+        recommendation_en: 'Use environment variables, Docker Secrets, or a secure storage like HashiCorp Vault to manage sensitive information separately from code.'
+    },
+    {
+        id: 'generic_hardcoded_secret',
+        semgrepId: 'generic.secrets.security.hardcoded-secret',
+        name: '일반 하드코딩된 비밀 정보', name_en: 'Generic Hardcoded Secret',
+        pattern: null,
+        description: '소스 코드에 민감한 정보(비밀번호, API 키 등)가 하드코딩되어 있습니다.',
+        details: '민감한 정보는 환경 변수나 보안 저장소를 통해 관리되어야 합니다.',
+        details_en: 'Sensitive information (passwords, API keys, etc.) is hardcoded in the source code. Sensitive information should be managed through environment variables or secure storage.',
         severity: 'High',
         category: '일반', category_en: 'General',
         recommendation_ko: '환경 변수, Docker Secrets, 또는 HashiCorp Vault와 같은 보안 저장소를 사용하여 민감한 정보를 코드와 분리하여 관리하세요.',
@@ -90,13 +129,26 @@ const vulnerabilityPatterns = [
         recommendation_ko: '외부 프로세스를 실행할 때 사용자 입력을 인자로 안전하게 전달하고, 고정된 명령어만 사용하도록 제한하세요. 불가피하게 `exec`를 사용해야 한다면, 사용자 입력을 쉘 메타문자로부터 엄격하게 이스케이프 처리해야 합니다.',
         recommendation_en: 'When executing external processes, pass user input safely as arguments and restrict usage to fixed commands. If you must use `exec`, strictly escape user input from shell metacharacters.'
     },
+    {
+        id: 'insecure_deserialization',
+        semgrepId: 'python.lang.security.audit.insecure-deserialization.insecure-deserialization',
+        name: '안전하지 않은 역직렬화', name_en: 'Insecure Deserialization',
+        pattern: null,
+        description: '안전하지 않은 역직렬화 취약점이 발견되었습니다. 신뢰할 수 없는 데이터의 역직렬화는 원격 코드 실행으로 이어질 수 있습니다.',
+        details: '공격자가 조작된 직렬화된 객체를 전송하여 애플리케이션의 로직을 변경하거나 임의 코드를 실행할 수 있습니다.',
+        details_en: 'Insecure deserialization vulnerability found. Deserializing untrusted data can lead to remote code execution. An attacker can send a crafted serialized object to alter application logic or execute arbitrary code.',
+        severity: 'High', // 일반적으로 High
+        category: '백엔드', category_en: 'Backend',
+        recommendation_ko: '신뢰할 수 없는 소스로부터의 데이터 역직렬화를 피하고, 반드시 필요한 경우 안전한 역직렬화 라이브러리를 사용하거나 데이터 유효성 검사를 철저히 수행하세요.',
+        recommendation_en: 'Avoid deserializing data from untrusted sources. If absolutely necessary, use secure deserialization libraries or perform strict data validation.'
+    },
     // =================================================================
     // Medium Severity Vulnerabilities
     // =================================================================
     {
         id: 'xss_innerHTML',
         name: 'innerHTML을 통한 XSS', name_en: 'Potential XSS via innerHTML',
-        pattern: /\.innerHTML\s*[+=]\s*(?!['"`]).+/i,
+        pattern: /\.innerHTML\s*\+=\s*(?!['"`]).+/i,
         description: '신뢰할 수 없는 변수를 `innerHTML`에 직접 할당하면 Cross-Site Scripting (XSS) 공격에 취약할 수 있습니다.',
         details: '악의적인 스크립트가 포함된 문자열이 innerHTML을 통해 DOM에 삽입되면, 해당 스크립트가 실행되어 사용자의 세션을 탈취하거나 의도하지 않은 동작을 유발할 수 있습니다.',
         details_en: 'If a string containing a malicious script is inserted into the DOM via innerHTML, the script can execute, potentially stealing user sessions or causing unintended actions.',
@@ -115,7 +167,20 @@ const vulnerabilityPatterns = [
         severity: 'Medium',
         category: '프론트엔드', category_en: 'Frontend',
         recommendation_ko: '`dangerouslySetInnerHTML` 사용을 피하고, 데이터를 직접 렌더링하거나, 불가피할 경우 DOMPurify와 같은 라이브러리로 HTML을 사용 전에 반드시 새니타이즈하세요.',
-        recommendation_en: 'Avoid using `dangerouslySetInnerHTML`. Render data directly, or if unavoidable, sanitize the HTML with a library like DOMPurify before use.'
+        recommendation_en: 'Avoid using `dangerouslySetInnerHTML`. Render data directly, or if unavoidable, sanitize the HTML with a library like DOMPurify.'
+    },
+    {
+        id: 'react_xss',
+        semgrepId: 'javascript.react.security.audit.react-xss.react-xss',
+        name: 'React XSS 취약점', name_en: 'React XSS Vulnerability',
+        pattern: null,
+        description: 'React 애플리케이션에서 잠재적인 XSS 취약점이 발견되었습니다.',
+        details: '사용자 입력이 적절히 새니타이즈되지 않고 DOM에 삽입될 경우 XSS 공격에 노출될 수 있습니다.',
+        details_en: 'Potential XSS vulnerability found in React application. XSS attacks can occur if user input is inserted into the DOM without proper sanitization.',
+        severity: 'Medium',
+        category: '프론트엔드', category_en: 'Frontend',
+        recommendation_ko: '사용자 입력을 DOM에 삽입하기 전에 반드시 새니타이즈하거나, `dangerouslySetInnerHTML` 사용을 피하세요.',
+        recommendation_en: 'Always sanitize user input before inserting it into the DOM, or avoid using `dangerouslySetInnerHTML`.'
     },
     {
         id: 'detect-non-literal-regexp',
@@ -133,7 +198,7 @@ const vulnerabilityPatterns = [
     {
         id: 'insecure_cookie',
         name: '안전하지 않은 쿠키 플래그', name_en: 'Insecure Cookie Flags',
-        pattern: /res\.cookie\((?!.*(httpOnly:\s*true|secure:\s*true|sameSite:\s*['"](Strict|Lax)['"])).*\)/i,
+        pattern: /res\.cookie\((?!.*(httpOnly:\s*true|secure:\s*true|sameSite:\s*['"](Strict|Lax)['"]))\s*.*\)/i,
         description: '쿠키에 `HttpOnly`, `Secure`, `SameSite`와 같은 보안 플래그가 충분히 설정되지 않았습니다.',
         details: '`HttpOnly`는 스크립트의 쿠키 접근을 막아 XSS 공격을 완화하고, `Secure`는 HTTPS에서만 쿠키를 전송하며, `SameSite`는 CSRF 공격을 방어하는 데 도움을 줍니다.',
         details_en: '`HttpOnly` prevents script access to cookies, mitigating XSS. `Secure` ensures cookies are only sent over HTTPS. `SameSite` helps defend against CSRF attacks.',
@@ -176,8 +241,8 @@ const vulnerabilityPatterns = [
         details_en: 'The `integrity` attribute allows the browser to verify that fetched resources (like JS or CSS) have not been manipulated. Without it, an attacker who compromises a CDN could inject malicious code into your site, leading to XSS and other attacks.',
         severity: 'Medium',
         category: '프론트엔드', category_en: 'Frontend',
-        recommendation_ko: '외부 리소스(CDN 등)를 로드하는 `<script>` 또는 `<link>` 태그에 SRI(Subresource Integrity) 해시 값을 포함한 `integrity` 속성을 추가하세요. 예: <script src="..." integrity="sha384-..." crossorigin="anonymous"></script>',
-        recommendation_en: 'Add the `integrity` attribute with an SRI (Subresource Integrity) hash value to all `<script>` and `<link>` tags that load resources from external origins (e.g., CDNs). Example: <script src="..." integrity="sha384-..." crossorigin="anonymous"></script>'
+        recommendation_ko: '외부 리소스(CDN 등)를 로드하는 `<script>` 또는 `<link>` 태그에 SRI(Subresource Integrity) 해시 값을 포함한 `integrity` 속성을 추가하세요. 예: <script src="..." xintegrity="sha384-..." crossorigin="anonymous"></script>',
+        recommendation_en: 'Add the `integrity` attribute with an SRI (Subresource Integrity) hash value to all `<script>` and `<link>` tags that load resources from external origins (e.g., CDNs). Example: <script src="..." xintegrity="sha384-..." crossorigin="anonymous"></script>'
     },
     {
         id: 'avoid-v-html', // Semgrep ID: javascript.vue.security.audit.xss.templates.avoid-v-html.avoid-v-html
@@ -248,7 +313,7 @@ const vulnerabilityPatterns = [
     {
         id: 'missing_helmet',
         name: '보안 헤더(Helmet) 부재', name_en: 'Missing Security Headers (Helmet)',
-        pattern: /const\s+app\s*=\s*express\(\);(?![\s\S]*app\.use\(helmet\(\)\))/i,
+        pattern: /const\s+app\s*=\s*express\(\);(?!\s*[\s\S]*app\.use\(helmet\(\)\))/i,
         description: 'Express.js 애플리케이션에서 보안 관련 HTTP 헤더를 설정하는 `helmet` 미들웨어가 확인되지 않았습니다.',
         details: '`helmet`은 XSS 방어, 클릭재킹 방지 등 다양한 보안 위협을 완화하는 HTTP 헤더를 자동으로 설정해줍니다.',
         details_en: 'The `helmet` middleware automatically sets various HTTP headers that help mitigate security threats like XSS and clickjacking.',
@@ -274,13 +339,13 @@ const vulnerabilityPatterns = [
 function scanContent(content) {
     const findings = [];
     const lines = content.split('\n');
-    
+
     vulnerabilityPatterns.forEach(vuln => {
         if (['missing_helmet', 'missing_csrf'].includes(vuln.id)) {
             if (vuln.pattern.test(content)) {
                 findings.push({ ...vuln, line: 1, code: `Application-wide check: ${vuln.name} protection might be missing.` });
             }
-        } 
+        }
         else {
             lines.forEach((line, index) => {
                 if (vuln.pattern.test(line)) {
@@ -296,28 +361,19 @@ function scanContent(content) {
     return findings;
 }
 
-const { execFile } = require('child_process');
-const path = require('path');
-const os = require('os');
-const fs = require('fs');
 const { app } = require('electron');
+const path = require('path');
+const fs = require('fs');
 
-const IS_WINDOWS = os.platform() === 'win32';
-
-// Production: In the packaged app, resources are in `process.resourcesPath`.
-// Development: In the project root, relative to `__dirname`.
-const basePath = app.isPackaged ? process.resourcesPath : __dirname;
-const SEMGREP_EXE = path.join(basePath, '.py-semgrep', 'Scripts', 'semgrep.exe');
-
+const USER_DATA_PATH = app.getPath('userData');
+const PYTHON_INSTALL_DIR = path.join(USER_DATA_PATH, '.py-semgrep');
+const SEMGREP_EXE_PATH = path.join(PYTHON_INSTALL_DIR, 'Scripts', 'semgrep.exe');
 
 function getSemgrepExecutablePath() {
-    // 1. Check for the packaged Semgrep first.
-    if (fs.existsSync(SEMGREP_EXE)) {
-        return SEMGREP_EXE;
+    if (fs.existsSync(SEMGREP_EXE_PATH)) {
+        return SEMGREP_EXE_PATH;
     }
-
-    // 2. Fallback to checking the system's PATH.
-    // This is for users who might have installed it manually via `pip install semgrep`.
+    // Fallback for manual installation
     return 'semgrep';
 }
 

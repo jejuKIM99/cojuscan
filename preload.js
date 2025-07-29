@@ -68,6 +68,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // --- URL 목록 가져오기 (신규) ---
   fetchVerifiedUrls: (userId) => ipcRenderer.invoke('url:verified:fetch', userId),
 
+  // --- 환경 상태 확인 (신규) ---
+  getEnvStatus: () => ipcRenderer.invoke('getEnvStatus'),
+  openPathInExplorer: (path) => ipcRenderer.invoke('openPathInExplorer', path), // 추가
+
   // --- Splash Screen Progress (신규) ---
   onSplashProgress: (callback) => ipcRenderer.on('splash-progress', (event, progress, text) => callback(progress, text)),
+
+  // --- Splash Screen (Installation) ---
+  installDependencies: () => ipcRenderer.send('install-dependencies'),
+  onInstallationRequired: (callback) => ipcRenderer.on('installation-required', (event, items, pythonZipSize) => callback(items, pythonZipSize)),
+  onInstallationProgress: (callback) => ipcRenderer.on('installation-progress', (event, ...args) => callback(...args)),
+  onInstallationComplete: (callback) => ipcRenderer.on('installation-complete', (event, ...args) => callback(...args)),
+  onInstallationError: (callback) => ipcRenderer.on('installation-error', (event, ...args) => callback(...args)),
 });

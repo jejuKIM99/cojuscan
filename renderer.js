@@ -6,7 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
             codeExplorer: "Code Explorer", selectDirectory: "디렉토리 선택", searchFilesPlaceholder: "파일 검색...", selectAll: "전체 선택", deselectAll: "전체 해제", selectProjectFolder: "프로젝트 폴더를 선택하세요.", vulnerabilityScan: "취약점 검사", startSimpleScan: "단순 검사", startPrecisionScan: "정밀 검사", progress: "진행률", startScanToSeeResults: "검사를 시작하여 취약점 결과를 확인하세요.", helpTitle: "도움말", detectableVulnerabilities: "탐지 가능 취약점 (단순 검사 기준)", clickVulnerabilityToSeeDetails: "왼쪽 목록에서 취약점 항목을 클릭하여 설명을 확인하세요.", supportedExtensions: "지원 확장자", scanInProgress: "검사 중... ", scanComplete: "검사 완료", noVulnerabilitiesFound: "선택한 파일에서 취약점이 발견되지 않았습니다.", clean: "안전!", securityScore: "보안 점수", found: "개 발견", ignore: "무시", ignored: "무시됨", recommendation: "권장 사항", directoryLoadError: "디렉토리를 불러오지 못했습니다.", scanError: "스캔 중 오류 발생", semgrepNotFoundTitle: "Semgrep 설치 필요", semgrepNotFound: "정밀 검사를 사용하려면 Semgrep 엔진이 필요합니다. 시스템에 설치되어 있지 않은 것 같습니다.", semgrepInstallInstruction: "터미널에서 'python -m pip install semgrep' 명령어를 실행하여 설치하세요. 설치 후 프로그램을 다시 시작해야 할 수 있습니다.", exportReport: "보고서 출력", themeEditorTitle: "테마 편집기", themeNamePlaceholder: "테마 이름을 입력하세요", addTheme: "추가", close: "닫기", addCustomTheme: "커스텀 테마 추가", deleteTheme: "삭제", deleteConfirm: "정말 삭제하시겠습니까?", themeLimitError: "커스텀 테마는 최대 3개까지 저장할 수 있습니다. 기존 테마를 삭제해주세요.", themeNameExistsError: "같은 이름의 테마가 이미 존재합니다.", themeNameEmptyError: "테마 이름은 비워둘 수 없습니다.", hoverPreview: "호버", activePreview: "활성화", helpModalPreview: "도움말", urlModalPreview: "URL모달",
             scanOptions: "검사 옵션", ignoreIntegrity: "리소스 무결성 검증 누락 무시", ignoreConsoleLogs: "console.log 경고 무시", ignoreCorsWildcard: "CORS 와일드카드 정책 무시",
             // URL Scan Translations
-            startUrlScan: "URL 분석", urlScanTitle: "URL 취약점 분석", urlScanInfoTitle: "주의사항", urlScanInfoCase1Title: "✅ 분석 가능한 경우", urlScanInfoCase1Desc: "HTML, CSS, JavaScript 파일들이 서버에 개별 파일로 배포된 정적 웹사이트. (예: 순수 HTML/CSS/JS, Jekyll, Hugo 기반 사이트)", urlScanInfoCase2Title: "⚠️ 부분적으로 분석 가능한 경우", urlScanInfoCase2Desc: "리액트(React), Vue 등 빌드 과정을 거치는 사이트. 이 경우 빌드된 최종 JavaScript 파일 하나만 분석됩니다. 원본 소스 코드를 분석하려면 '디렉토리 선택' 기능을 사용하세요.", urlScanInfoReasonTitle: "이유", urlScanInfoReasonDesc: "URL 분석은 실제 사용자가 브라우저로 보는 배포된 파일들만 접근할 수 있습니다. 개발용 소스코드(`src` 폴더 등)는 서버에 배포되지 않으므로 URL로 직접 접근하여 분석할 수 없습니다.", urlScanStep1: "1단계: 분석 환경 준비", urlScanSubStep1Title: "메타태그 삽입", urlScanSubStep1Desc: "분석할 사이트의 &lt;head&gt; 태그 안에 아래 메타 태그를 추가하세요.", urlScanSubStep2Title: "cojuscan.js 생성", urlScanSubStep2Desc: "사이트의 루트 경로에 아래와 같이 폴더와 파일을 생성하세요.", urlScanSubStep3Title: "파일 경로 추가 및 배포", urlScanSubStep3Desc: "생성한 cojuscan.js 파일에 분석할 모든 파일의 경로를 추가하세요. 아래 형식들을 지원합니다.", copied: "복사되었습니다!", urlScanStep2: "2단계: URL 입력 및 검사", urlScanStep2Desc: "사이트 배포가 완료되었다면, 분석할 URL을 입력하고 검사를 시작하세요. (예: https://example.com)", startScanAction: "검사 시작", verificationFailed: "소유권 확인 실패. 메타 태그가 정확히 삽입되었는지 확인하세요.", urlFetchFailed: "URL을 가져올 수 없습니다. 주소를 확인하거나 서버 상태를 점검하세요.", invalidUrl: "유효한 URL을 입력해주세요. (https://로 시작)", cojuscanJsNotFound: "`cojuscan/cojuscan.js` 파일을 찾을 수 없습니다. 파일이 정확한 위치에 있고, 서버에서 접근 가능한지 확인하세요.", verifiedUrlListTitle: "검증된 URL 목록", noVerifiedUrls: "검증된 URL이 없습니다.", rescan: "재검사", urlScanResourcesTitle: "URL 분석 리소스", noAnalyzedResources: "분석된 리소스가 없습니다.",
+            startUrlScan: "URL 분석", urlScanTitle: "URL 취약점 분석", urlScanInfoTitle: "주의사항", urlScanInfoCase1Title: "✅ 분석 가능한 경우", urlScanInfoCase1Desc: "HTML, CSS, JavaScript 파일들이 서버에 개별 파일로 배포된 정적 웹사이트. (예: 순수 HTML/CSS/JS, Jekyll, Hugo 기반 사이트)", urlScanInfoCase2Title: "⚠️ 부분적으로 분석 가능한 경우", urlScanInfoCase2Desc: "리액트(React), Vue 등 빌드 과정을 거치는 사이트. 이 경우 빌드된 최종 JavaScript 파일 하나만 분석됩니다. 원본 소스 코드를 분석하려면 '디렉토리 선택' 기능을 사용하세요.", urlScanInfoReasonTitle: "이유", urlScanInfoReasonDesc: "URL 분석은 실제 사용자가 브라우저로 보는 배포된 파일들만 접근할 수 있습니다. 개발용 소스코드(`src` 폴더 등)는 서버에 배포되지 않으므로 URL로 직접 접근하여 분석할 수 없습니다.", urlScanStep1: "1단계: 분석 환경 준비", urlScanSubStep1Title: "메타태그 삽입", urlScanSubStep1Desc: "분석할 사이트의 &lt;head&gt; 태그 안에 아래 메타 태그를 추가하세요.", urlScanSubStep2Title: "cojuscan.js 생성", urlScanSubStep2Desc: "사이트의 루트 경로에 아래와 같이 폴더와 파일을 생성하세요.", urlScanSubStep3Title: "파일 경로 추가 및 배포", urlScanSubStep3Desc: "생성한 cojuscan.js 파일에 분석할 모든 파일의 경로를 추가하세요. 아래 형식들을 지원합니다.", copied: "복사되었습니다!", urlScanStep2: "2단계: URL 입력 및 검사", urlScanStep2Desc: "사이트 배포가 완료되었다면, 분석할 URL을 입력하고 검사를 시작하세요. (예: https://example.com)", startScanAction: "검사 시작", verificationFailed: "소유권 확인 실패. 메타 태그가 정확히 삽입되었는지 확인하세요.", urlFetchFailed: "URL을 가져올 수 없습니다. 주소를 확인하거나 서버 상태를 점검하세요.", invalidUrl: "유효한 URL을 입력해주세요. (https://로 시작)", cojuscanJsNotFound: "`cojuscan/cojuscan.js` 파일을 찾을 수 없습니다. 파일이 정확한 위치에 있고, 서버에서 접근 가능한지 확인하세요.", verifiedUrlListTitle: "검증된 URL 목록", noVerifiedUrls: "검증된 URL이 없습니다.", rescan: "재검사", urlScanResourcesTitle: "URL 분석 리소스", noAnalyzedResources: "분석된 리소스가 없습니다.", notFound: "찾을 수 없음", pathLabel: "경로", versionLabel: "버전",
+            Python: "Python", Pip: "Pip", Semgrep: "Semgrep",
             // New Theme Translations
             editTheme: "Edit", exportTheme: "Export", importSharedTheme: "공유 테마 불러오기", sharedThemesTitle: "공유 테마", sharedThemeLimitError: "공유 테마는 최대 3개까지 추가할 수 있습니다.", themeImportError: "테마를 불러오는 데 실패했습니다. 파일이 손상되었거나 형식이 올바르지 않을 수 있습니다.", themeImportSuccess: "테마를 성공적으로 불러왔습니다!", themeNameReadonlyError: "수정 중인 테마의 이름은 변경할 수 없습니다.", themeEdit: "테마 수정", sharedThemeTooltip: "공유된 테마 (수정 불가)", saveChanges: "변경사항 저장",
             // GitHub Translations (NEW)
@@ -213,6 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const githubActionButtons = getEl('github-action-buttons');
     const githubNextStepBtn = getEl('github-next-step-btn');
     const githubImportBtn = getEl('github-import-btn');
+
+    // --- 환경 상태 모달 요소 ---
+    const envStatusBtn = getEl('env-status-btn');
+    const envStatusModal = getEl('env-status-modal');
+    const closeEnvStatusModalBtn = getEl('close-env-status-modal-btn');
+    const envStatusContent = getEl('env-status-content');
     
     // --- 테마 요소 ---
     const themeBtn = getEl('theme-btn');
@@ -1336,6 +1343,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!helpModal.classList.contains('hidden')) {
                 populateHelpModal();
             }
+            if (!envStatusModal.classList.contains('hidden')) {
+                populateEnvStatusModal();
+            }
             if (currentScanResults) {
                 displayResults(currentScanResults);
             }
@@ -1797,6 +1807,64 @@ document.addEventListener('DOMContentLoaded', () => {
         githubLoading.classList.add('hidden');
         githubActionButtons.classList.remove('hidden');
     };
+
+    // --- 환경 상태 모달 로직 ---
+    const populateEnvStatusModal = async () => {
+        const status = await window.electronAPI.getEnvStatus();
+        envStatusContent.innerHTML = '';
+
+        for (const [key, value] of Object.entries(status)) {
+            const item = document.createElement('div');
+            item.className = 'p-3 bg-[var(--main-bg)] rounded-lg flex flex-col';
+            
+            const header = document.createElement('div');
+            header.className = 'flex items-center justify-between mb-1';
+
+            const name = document.createElement('span');
+            name.className = 'font-bold text-[var(--text-color)]';
+            name.textContent = translations[currentLang][key] || key; // 번역 적용
+
+            const statusText = document.createElement('span');
+            statusText.className = `px-2 py-1 rounded-full text-xs font-semibold ${value.installed ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+            statusText.textContent = value.installed ? translations[currentLang].installed : translations[currentLang].notFound; // 번역 적용
+
+            header.append(name, statusText);
+            item.appendChild(header);
+
+            const pathText = document.createElement('p');
+            pathText.className = 'text-xs text-[var(--text-color-dark)] mt-1 cursor-pointer hover:underline'; // 클릭 가능하도록 스타일 추가
+            pathText.textContent = `${translations[currentLang].pathLabel}: ${value.path}`; // 번역 적용
+            pathText.title = value.path; // 툴팁으로 전체 경로 표시
+            pathText.addEventListener('click', () => {
+                if (value.path) {
+                    window.electronAPI.openPathInExplorer(value.path); // 새 IPC 호출
+                }
+            });
+            item.appendChild(pathText);
+
+            const versionText = document.createElement('p');
+            versionText.className = 'text-xs text-[var(--text-color-dark)]';
+            versionText.textContent = `${translations[currentLang].versionLabel}: ${value.version}`; // 번역 적용
+            item.appendChild(versionText);
+
+            envStatusContent.appendChild(item);
+        }
+    };
+
+    envStatusBtn.addEventListener('click', async () => {
+        await populateEnvStatusModal();
+        envStatusModal.classList.remove('hidden');
+    });
+
+    closeEnvStatusModalBtn.addEventListener('click', () => {
+        envStatusModal.classList.add('hidden');
+    });
+
+    envStatusModal.addEventListener('click', (e) => {
+        if (e.target === envStatusModal) {
+            envStatusModal.classList.add('hidden');
+        }
+    });
 
     const updateGitHubUserState = async () => {
         setGitHubLoading(true, '계정 정보 확인 중...');

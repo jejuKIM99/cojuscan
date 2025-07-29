@@ -4,10 +4,11 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const { URL } = require('url');
 const { createClient } = require('@supabase/supabase-js');
 const Store = require('electron-store');
+const extractZip = require('extract-zip'); // Add this line
 const { scanContent, vulnerabilityPatterns, getSemgrepExecutablePath } = require('./scanner.js');
 const os = require('os');
 const crypto = require('crypto');
@@ -46,12 +47,14 @@ const GITHUB_REDIRECT_URI = 'cojuscan://auth/callback';
 
 const IS_WINDOWS = process.platform === 'win32';
 const isPackaged = app.isPackaged;
-const RESOURCES_PATH = isPackaged ? process.resourcesPath : __dirname;
-const LOCAL_PYTHON_DIR = path.join(RESOURCES_PATH, '.py-semgrep');
-const LOCAL_SEMGREP_EXE = path.join(LOCAL_PYTHON_DIR, 'Scripts', 'semgrep.exe');
+
+const RESOURCES_BASE_PATH = isPackaged ? path.join(process.resourcesPath, 'app') : __dirname;
+const USER_DATA_PATH = app.getPath('userData');
+const PYTHON_INSTALL_DIR = path.join(USER_DATA_PATH, '.py-semgrep');
+const SEMGREP_EXE_PATH = path.join(PYTHON_INSTALL_DIR, 'Scripts', 'semgrep.exe');
 
 // Semgrep CLI 설치 경로 (사용자 데이터 디렉토리)
-const semgrepExecutable = LOCAL_SEMGREP_EXE;
+const semgrepExecutable = SEMGREP_EXE_PATH;
 
 if (process.defaultApp) {
     if (process.argv.length >= 2) {
@@ -64,11 +67,11 @@ if (process.defaultApp) {
 const codeExtensions = new Set([
     '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.vue', '.svelte', '.py', '.pyw',
     '.java', '.class', '.jar', '.kt', '.kts', '.scala', '.groovy', '.c', '.cpp', '.h', '.hpp',
-    '.cs', '.dll', '.vb', '.php', '.phtml', '.html', '.htm', '.xhtml', '.css', '.scss', 
-    '.less', '.sass', '.go', '.rs', '.swift', '.m', '.mm', '.rb', '.rbw', '.pl', '.pm', 
-    '.sh', '.bash', '.zsh', '.ps1', '.psm1', '.lua', '.dart', '.json', '.yml', '.yaml', 
-    '.xml', '.toml', '.ini', '.cfg', '.conf', '.env', 'dockerfile', 'jenkinsfile', 
-    '.tf', '.hcl', '.graphql', '.gql', '.sql', '.ddl', '.erl', '.hrl', '.ex', '.exs', 
+    '.cs', '.dll', '.vb', '.php', '.phtml', '.html', '.htm', '.xhtml', '.css', '.scss',
+    '.less', '.sass', '.go', '.rs', '.swift', '.m', '.mm', '.rb', '.rbw', '.pl', '.pm',
+    '.sh', '.bash', '.zsh', '.ps1', '.psm1', '.lua', '.dart', '.json', '.yml', '.yaml',
+    '.xml', '.toml', '.ini', '.cfg', '.conf', '.env', 'dockerfile', 'jenkinsfile',
+    '.tf', '.hcl', '.graphql', '.gql', '.sql', '.ddl', '.erl', '.hrl', '.ex', '.exs',
     '.elm', '.zig', '.nim', '.cr', '.md', '.markdown'
 ]);
 
@@ -107,7 +110,7 @@ const mapSeverity = (semgrepSeverity) => {
 };
 
 function loadIconsAsDataUris() {
-    const iconDir = path.join(RESOURCES_PATH, 'build', 'icon');
+    const iconDir = path.join(RESOURCES_BASE_PATH, 'build', 'icon');
     const icons = {};
     try {
         const files = fs.readdirSync(iconDir);
@@ -135,10 +138,10 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
         const fullFilePaths = filesToScan.map(f => path.join(projectPath, f));
         const args = ['scan', '--json', '--config=auto', ...fullFilePaths];
         if(currentWindow) currentWindow.webContents.send('scan:progress', { progress: 10, file: '정밀 분석 엔진 시작 중...' });
-        
+
         // Use the globally defined semgrepExecutable
         const semgrep = spawn(getSemgrepExecutablePath(), args, { cwd: projectPath });
-        
+
         semgrep.on('error', (err) => {
             if (err.code === 'ENOENT') {
                 return reject(new Error('SEMGREP_NOT_FOUND'));
@@ -152,10 +155,10 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
         semgrep.stderr.on('data', (data) => { errorData += data.toString(); });
 
         semgrep.on('close', (code) => {
-            if (code > 1) { 
+            if (code > 1) {
                 console.error(`Semgrep 스캔 프로세스가 코드 ${code}로 종료되었습니다: ${errorData}`);
-                const filteredError = errorData.split('\n').filter(line => 
-                    !line.includes('UserWarning: pkg_resources is deprecated') && 
+                const filteredError = errorData.split('\n').filter(line =>
+                    !line.includes('UserWarning: pkg_resources is deprecated') &&
                     !line.includes('(ca-certs): Ignored 1 trust anchors') &&
                     line.trim() !== ''
                 ).join('\n').trim();
@@ -164,11 +167,11 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
                 if (filteredError) {
                     finalErrorMessage = `스캔 실패. 상세: ${filteredError}`;
                 }
-                
+
                 return reject(new Error(finalErrorMessage));
             }
 
-            const significantError = errorData.split('\n').filter(line => 
+            const significantError = errorData.split('\n').filter(line =>
                 !line.includes('UserWarning: pkg_resources is deprecated') &&
                 !line.includes('(ca-certs): Ignored 1 trust anchors') &&
                 line.trim() !== ''
@@ -187,11 +190,11 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
                 const parsedOutput = JSON.parse(jsonData);
                 const results = {};
                 const fileContentsCache = new Map();
-                
+
                 parsedOutput.results.forEach(finding => {
                     const relativePath = path.relative(projectPath, finding.path);
                     if (!results[relativePath]) results[relativePath] = [];
-                    
+
                     let lines = fileContentsCache.get(finding.path);
                     if (!lines) {
                         try {
@@ -202,12 +205,12 @@ async function runSemgrepScan(projectPath, filesToScan, currentWindow) {
                             lines = [];
                         }
                     }
-                    
+
                     const lineContent = lines[finding.start.line - 1] || '';
-                    
+
                     let ruleInfo = Array.from(rulesMap.values()).find(p => p.semgrepId === finding.check_id);
                     if (!ruleInfo) {
-                        ruleInfo = rulesMap.get(finding.check_id) || 
+                        ruleInfo = rulesMap.get(finding.check_id) ||
                                    Array.from(rulesMap.values()).find(p => p.id && finding.check_id.includes(p.id));
                     }
 
@@ -262,7 +265,7 @@ const createWindow = () => {
         },
         show: false, // 메인 창은 스플래시 화면이 사라진 후에 표시
     });
-  
+
     // 메인 창이 준비되면 스플래시 창을 닫고 메인 창을 표시
     // 'ready-to-show' 이벤트 리스너를 사용하여 플리커링을 방지합니다.
     mainWindow.once('ready-to-show', () => {
@@ -282,7 +285,7 @@ const createWindow = () => {
     mainWindow.on('unmaximize', () => mainWindow.webContents.send('window-unmaximize'));
 
     let githubAccessToken = null;
-    
+
     let isAuthInProgress = false; // 인증 진행 상태를 추적하는 잠금 변수
 
     function base64URLEncode(str) {
@@ -309,7 +312,7 @@ const createWindow = () => {
         const codeVerifier = base64URLEncode(rawVerifier);
         const challengeBuffer = sha256(codeVerifier);
         const codeChallenge = base64URLEncode(challengeBuffer);
-        
+
         const authUrl = new URL('https://github.com/login/oauth/authorize');
         authUrl.searchParams.append('client_id', process.env.GITHUB_CLIENT_ID);
         authUrl.searchParams.append('redirect_uri', GITHUB_REDIRECT_URI);
@@ -324,7 +327,7 @@ const createWindow = () => {
             const handleAuthCallback = async (event, url) => {
                 // 이 콜백 핸들러는 한 번만 실행되어야 합니다.
                 app.removeListener('open-url', handleAuthCallback);
-                
+
                 const raw_code = /code=([^&]*)/.exec(url) || null;
                 const code = (raw_code && raw_code.length > 1) ? raw_code[1] : null;
                 const returnedState = /state=([^&]*)/.exec(url) || null;
@@ -368,10 +371,10 @@ const createWindow = () => {
                     reject(new Error('GitHub authentication timed out.'));
                     isAuthInProgress = false; // 타임아웃, 잠금 해제
                 }
-            }, 300000); 
+            }, 300000);
         });
     });
-    
+
     ipcMain.handle('github:user:get', async () => {
         if (!githubAccessToken) {
             githubAccessToken = store.get('githubAccessToken');
@@ -417,7 +420,7 @@ const createWindow = () => {
             console.error(e); return [];
         }
     });
-    
+
     ipcMain.handle('github:branches:get', async (event, repoFullName) => {
         if (!githubAccessToken) return [];
         try {
@@ -434,22 +437,22 @@ const createWindow = () => {
     ipcMain.handle('github:repo:import', async (event, { repo, branch }) => {
         if (!githubAccessToken) return null;
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
-    
+
         const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cojuscan-'));
-        
+
         try {
             currentWindow.webContents.send('scan:progress', { progress: 10, file: '브랜치 정보 확인 중...' });
             const branchResponse = await net.fetch(`https://api.github.com/repos/${repo.full_name}/branches/${branch.name}`, { headers: { 'Authorization': `token ${githubAccessToken}` } });
             if (!branchResponse.ok) throw new Error('Could not fetch branch info.');
             const branchData = await branchResponse.json();
             const treeSha = branchData.commit.commit.tree.sha;
-    
+
             currentWindow.webContents.send('scan:progress', { progress: 25, file: '파일 목록 가져오는 중...' });
             const treeResponse = await net.fetch(`https://api.github.com/repos/${repo.full_name}/git/trees/${treeSha}?recursive=1`, { headers: { 'Authorization': `token ${githubAccessToken}` } });
             if (!treeResponse.ok) throw new Error('Could not fetch file tree.');
             // treeResponse.json()의 결과를 treeData 변수에 할당합니다.
-            const treeData = await treeResponse.json(); 
-    
+            const treeData = await treeResponse.json();
+
             const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico']);
             const videoExtensions = new Set(['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm']);
             const filesToDownload = treeData.tree.filter(item => {
@@ -459,16 +462,16 @@ const createWindow = () => {
                 return !excludedExtensions.has(extension);
             });
             const totalFiles = filesToDownload.length;
-    
+
             for (let i = 0; i < totalFiles; i++) {
                 const file = filesToDownload[i];
                 const progress = 40 + Math.round((i / totalFiles) * 60);
                 currentWindow.webContents.send('scan:progress', { progress, file: `다운로드 중: ${file.path}` });
-    
+
                 const fileResponse = await net.fetch(file.url, { headers: { 'Authorization': `token ${githubAccessToken}` } });
                 if (!fileResponse.ok) continue;
                 const blobData = await fileResponse.json();
-    
+
                 const content = Buffer.from(blobData.content, blobData.encoding);
                 const filePath = path.join(tempDir, file.path);
                 fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -485,7 +488,7 @@ const createWindow = () => {
 
     ipcMain.handle('scan:simple', async (event, { projectPath, filesToScan }) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
-        
+
         const results = {};
         const totalFiles = filesToScan.length;
         for (let i = 0; i < totalFiles; i++) {
@@ -506,7 +509,7 @@ const createWindow = () => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         return runSemgrepScan(projectPath, filesToScan, currentWindow);
     });
-    
+
     ipcMain.handle('url:scan', async (event, { url, verificationToken }) => {
         const currentWindow = BrowserWindow.fromWebContents(event.sender);
         const sendProgress = (progress, text) => {
@@ -520,7 +523,7 @@ const createWindow = () => {
             sendProgress(10, `소유권 확인을 위해 페이지 로드 중...`);
             await hiddenWin.loadURL(url);
             const htmlContent = await hiddenWin.webContents.executeJavaScript('document.documentElement.outerHTML');
-            
+
             const verificationTag = `<meta name="cojuscan-verification" content="${verificationToken}">`;
             if (!htmlContent.includes(verificationTag)) {
                 throw new Error('VERIFICATION_FAILED');
@@ -529,7 +532,7 @@ const createWindow = () => {
             sendProgress(30, `cojuscan.js 파일 탐색 중...`);
             const mainUrl = new URL(url);
             const cojuscanUrl = new URL('/cojuscan/cojuscan.js', mainUrl.origin).href;
-            
+
             const cojuscanContent = await new Promise((resolve, reject) => {
                 const request = net.request({ url: cojuscanUrl });
                 let body = '';
@@ -580,7 +583,7 @@ const createWindow = () => {
                         });
                         request.end();
                     });
-                    
+
                     const findings = scanContent(fileContent);
                     if (findings.length > 0) {
                         if (!results[file]) results[file] = []; // 'file' 변수 사용
@@ -592,8 +595,8 @@ const createWindow = () => {
                     results[file].push({ // 'file' 변수 사용
                         id: 'fetch-error',
                         name: '파일 로드 실패', name_en: 'File Load Failed',
-                        description: `'${file}' 파일의 내용을 가져올 수 없습니다. 경로를 확인하세요.`, // 'file' 변수 사용
-                        description_en: `Could not fetch content for '${file}'. Check the path.`, // 'file' 변수 사용
+                        description: `'${file}' 파일의 내용을 가져올 수 없습니다. 경로를 확인하세요.`,
+                        description_en: `Could not fetch content for '${file}'. Check the path.`,
                         severity: 'Low', line: 1, code: e.message
                     });
                 }
@@ -675,7 +678,7 @@ const createWindow = () => {
             return { success: false, message: `파일 저장에 실패했습니다: ${error.message}` };
         }
     });
-    
+
     ipcMain.handle('theme:import', async () => {
         const { canceled, filePaths } = await dialog.showOpenDialog({
             title: '공유 테마 불러오기',
@@ -707,7 +710,7 @@ const createWindow = () => {
             return { path: dirPath, tree: readDirectoryStructure(dirPath) };
         } catch (error) { console.error('디렉토리 읽기 오류:', error); return null; }
     });
-    
+
     ipcMain.handle('get-app-info', () => {
         return {
             version: app.getVersion(),
@@ -732,12 +735,93 @@ const createWindow = () => {
             return { success: false, error: error.message };
         }
     });
-    
+
+    ipcMain.handle('getEnvStatus', async () => {
+        const status = {};
+
+        // Python 상태 확인
+        const pythonExePath = path.join(PYTHON_INSTALL_DIR, 'python.exe');
+        status.Python = {
+            installed: fs.existsSync(pythonExePath),
+            path: pythonExePath,
+            version: 'N/A'
+        };
+        if (status.Python.installed) {
+            try {
+                const { stdout } = await new Promise((resolve, reject) => {
+                    exec(`"${pythonExePath}" --version`, (error, stdout, stderr) => {
+                        if (error) reject(error);
+                        resolve({ stdout, stderr });
+                    });
+                });
+                status.Python.version = stdout.trim();
+            } catch (e) {
+                console.error('Python 버전 확인 실패:', e);
+            }
+        }
+
+        // Pip 상태 확인
+        const pipExePath = path.join(PYTHON_INSTALL_DIR, 'Scripts', 'pip.exe');
+        status.Pip = {
+            installed: fs.existsSync(pipExePath),
+            path: pipExePath,
+            version: 'N/A'
+        };
+        if (status.Pip.installed) {
+            try {
+                const { stdout } = await new Promise((resolve, reject) => {
+                    exec(`"${pipExePath}" --version`, (error, stdout, stderr) => {
+                        if (error) reject(error);
+                        resolve({ stdout, stderr });
+                    });
+                });
+                status.Pip.version = stdout.trim();
+            } catch (e) {
+                console.error('Pip 버전 확인 실패:', e);
+            }
+        }
+
+        // Semgrep 상태 확인
+        const semgrepExePath = path.join(PYTHON_INSTALL_DIR, 'Scripts', 'semgrep.exe');
+        status.Semgrep = {
+            installed: fs.existsSync(semgrepExePath),
+            path: semgrepExePath,
+            version: 'N/A'
+        };
+        if (status.Semgrep.installed) {
+            try {
+                const { stdout } = await new Promise((resolve, reject) => {
+                    exec(`"${semgrepExePath}" --version`, (error, stdout, stderr) => {
+                        if (error) reject(error);
+                        resolve({ stdout, stderr });
+                    });
+                });
+                status.Semgrep.version = stdout.trim();
+            } catch (e) {
+                console.error('Semgrep 버전 확인 실패:', e);
+            }
+        }
+
+        return status;
+    });
+
+    ipcMain.handle('openPathInExplorer', async (event, itemPath) => {
+        try {
+            // 파일인 경우 해당 파일이 있는 디렉토리를 열고 파일을 선택하도록 합니다.
+            // 디렉토리인 경우 해당 디렉토리를 엽니다.
+            await shell.showItemInFolder(itemPath);
+            return { success: true };
+        } catch (error) {
+            console.error('경로 열기 실패:', error);
+            return { success: false, message: error.message };
+        }
+    });
+
     ipcMain.handle('export:pdf', async (event, data) => {
         const reportWindow = new BrowserWindow({
             width: 800,
             height: 1120,
-            show: false, 
+            show: false,
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
                 contextIsolation: true,
@@ -767,16 +851,17 @@ const createWindow = () => {
         });
 
         await reportWindow.loadFile('report.html');
-        
+
         let logoDataUri = '';
         try {
-            const logoPath = path.join(RESOURCES_PATH, 'build', 'icon.ico');
+            // 이 경로는 RESOURCES_BASE_PATH를 사용해야 합니다.
+            const logoPath = path.join(RESOURCES_BASE_PATH, 'build', 'icon.ico');
             const logoData = fs.readFileSync(logoPath).toString('base64');
             logoDataUri = `data:image/x-icon;base64,${logoData}`;
         } catch (e) {
             console.error("로고 파일을 읽을 수 없습니다.", e);
         }
-        
+
         const finalData = {...data, logoData: logoDataUri};
         reportWindow.webContents.send('render-report-data', finalData);
     });
@@ -949,7 +1034,7 @@ const createWindow = () => {
             const localPath = path.join(bgDir, localFilename);
 
             fs.writeFileSync(localPath, Buffer.from(imageBuffer));
-            
+
             // CSS에서 사용할 수 있도록 file:// URL로 변환하여 반환
             return path.win32.normalize(localPath);
         } catch (error) {
@@ -976,11 +1061,11 @@ const createWindow = () => {
 // 스플래시 창 생성 함수
 const createSplashWindow = () => {
     splashWindow = new BrowserWindow({
-        width: 400,
-        height: 300,
-        transparent: false, // 투명 배경 비활성화
-        frame: false, // 프레임 제거
-        alwaysOnTop: true, // 항상 위에 표시
+        width: 714,
+        height: 500,
+        transparent: false,
+        frame: false,
+        alwaysOnTop: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -990,19 +1075,6 @@ const createSplashWindow = () => {
 
     splashWindow.loadFile('splash.html');
     splashWindow.on('closed', () => (splashWindow = null));
-    
-    // 스플래시 화면이 완전히 로드되면 메인 창 로딩 시작
-    splashWindow.webContents.on('did-finish-load', async () => {
-        sendSplashProgress(10, '앱 초기화 중...');
-        // 여기에서 필요한 초기화 작업을 수행하거나 진행률을 업데이트할 수 있습니다.
-        // 예를 들어, 데이터베이스 연결, 설정 로드 등
-        await new Promise(resolve => setTimeout(resolve, 500)); // 시뮬레이션 지연
-
-        sendSplashProgress(50, '메인 화면 로드 중...');
-        // 메인 창의 index.html 로드를 시작합니다.
-        // mainWindow가 이미 생성되었지만, loadFile은 아직 호출되지 않았습니다.
-        mainWindow.loadFile('index.html');
-    });
 };
 
 let isQuitting = false;
@@ -1045,14 +1117,125 @@ app.on('before-quit', (event) => {
     }, 5000);
 });
 
-app.whenReady().then(() => {
-    createSplashWindow(); // 앱 시작 시 스플래시 창 먼저 생성
-    createWindow(); // 메인 창은 백그라운드에서 생성
+function checkAndInstallDependencies() {
+    const dependencies = [
+        { name: 'Python', check: () => fs.existsSync(path.join(PYTHON_INSTALL_DIR, 'python.exe')) },
+        { name: 'Pip', check: () => fs.existsSync(path.join(PYTHON_INSTALL_DIR, 'Scripts', 'pip.exe')) },
+        { name: 'Semgrep', check: () => fs.existsSync(SEMGREP_EXE_PATH) }
+    ];
+
+    const missingDependencies = dependencies.filter(dep => !dep.check());
+
+    if (missingDependencies.length > 0) {
+        createSplashWindow();
+        splashWindow.webContents.on('did-finish-load', () => {
+            let pythonZipSize = 0;
+            try {
+                const pythonZipPath = path.join(process.resourcesPath, 'python-3.10.11-embed-amd64.zip');
+                const stats = fs.statSync(pythonZipPath);
+                pythonZipSize = stats.size; // Size in bytes
+            } catch (e) {
+                console.error('Failed to get Python zip size:', e);
+            }
+            splashWindow.webContents.send('installation-required', missingDependencies.map(dep => dep.name), pythonZipSize);
+        });
+    } else {
+        createWindow();
+        mainWindow.loadFile('index.html');
+    }
+}
+
+ipcMain.on('install-dependencies', async (event) => {
+    try {
+        const pythonZipPath = path.join(process.resourcesPath, 'python-3.10.11-embed-amd64.zip');
+        const pythonInstallDir = PYTHON_INSTALL_DIR; // C:\Users\user\AppData\Roaming\cojuscan\.py-semgrep
+
+        // 1. 기존 설치 디렉토리 삭제 (재설치 시)
+        if (fs.existsSync(pythonInstallDir)) {
+            fs.rmSync(pythonInstallDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(pythonInstallDir, { recursive: true });
+
+        // 2. Python 압축 해제
+        event.sender.send('installation-progress', { item: 'Python', progress: 10, status: '압축 해제 중...' });
+        await extractZip(pythonZipPath, { dir: pythonInstallDir });
+        event.sender.send('installation-progress', { item: 'Python', progress: 50, status: '환경 설정 중...' });
+
+        // 3. Python 환경 설정 (site-packages 활성화)
+        const pthFileContent = 'python310.zip\n.\nimport site';
+        fs.writeFileSync(path.join(pythonInstallDir, 'python310._pth'), pthFileContent);
+
+        // 4. Pip 설치 (get-pip.py 사용)
+        event.sender.send('installation-progress', { item: 'Pip', progress: 10, status: '설치 중...' });
+        const getPipUrl = 'https://bootstrap.pypa.io/get-pip.py';
+        const getPipPath = path.join(pythonInstallDir, 'get-pip.py');
+
+        await new Promise((resolve, reject) => {
+            const fileStream = fs.createWriteStream(getPipPath);
+            https.get(getPipUrl, (response) => {
+                if (response.statusCode !== 200) {
+                    return reject(new Error(`Failed to download get-pip.py: HTTP Status ${response.statusCode}`));
+                }
+                response.pipe(fileStream);
+                fileStream.on('finish', () => { fileStream.close(); resolve(); });
+            }).on('error', (err) => {
+                fs.unlink(getPipPath, () => reject(err));
+            });
+        });
+
+        const pythonExe = path.join(pythonInstallDir, 'python.exe');
+        await new Promise((resolve, reject) => {
+            const pipProcess = spawn(pythonExe, [getPipPath], { stdio: 'pipe' });
+            let stderrOutput = '';
+            pipProcess.stderr.on('data', (data) => { stderrOutput += data.toString(); });
+            pipProcess.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`get-pip.py failed with code ${code}. Error: ${stderrOutput}`));
+                }
+            });
+            pipProcess.on('error', (err) => reject(err));
+        });
+        fs.unlinkSync(getPipPath);
+        event.sender.send('installation-progress', { item: 'Pip', progress: 100, status: '완료' });
+
+        // 5. Semgrep 설치
+        event.sender.send('installation-progress', { item: 'Semgrep', progress: 10, status: '설치 중...' });
+        const pipExe = path.join(pythonInstallDir, 'Scripts', 'pip.exe');
+        await new Promise((resolve, reject) => {
+            const semgrepProcess = spawn(pipExe, ['install', 'semgrep'], { stdio: 'pipe' });
+            let stderrOutput = '';
+            semgrepProcess.stderr.on('data', (data) => { stderrOutput += data.toString(); });
+            semgrepProcess.on('close', (code) => {
+                if (code === 0) {
+                    resolve();
+                } else {
+                    reject(new Error(`Semgrep installation failed with code ${code}. Error: ${stderrOutput}`));
+                }
+            });
+            semgrepProcess.on('error', (err) => reject(err));
+        });
+        event.sender.send('installation-progress', { item: 'Semgrep', progress: 100, status: '완료' });
+
+        event.sender.send('installation-complete');
+
+        if (splashWindow) {
+            splashWindow.close();
+        }
+        createWindow();
+        mainWindow.loadFile('index.html');
+    } catch (error) {
+        console.error('Installation error:', error);
+        event.sender.send('installation-error', error.message);
+    }
 });
+
+app.whenReady().then(checkAndInstallDependencies);
 
 app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
+        checkAndInstallDependencies();
     }
 });
 
